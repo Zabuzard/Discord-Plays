@@ -23,6 +23,7 @@ import me.jakejmattson.discordkt.arguments.IntegerArg
 import me.jakejmattson.discordkt.commands.commands
 import me.jakejmattson.discordkt.dsl.bot
 import me.jakejmattson.discordkt.extensions.button
+import me.jakejmattson.discordkt.extensions.createMenu
 import java.awt.Dimension
 import java.io.File
 import java.util.*
@@ -69,26 +70,37 @@ fun commands() = commands("game") {
     slash("game-start", "Start a new game") {
         execute {
             respond("Starting a game")
-            channel.createMessage {
-                content = "this is a game..."
-                actionRow {
-                    button(null, Emojis.arrowUp) {
+
+            val displayMessage = channel.createMessage("display...")
+            channel.createMenu {
+                page { description = "controls" }
+
+                buttons {
+                    editButton(null, Emojis.arrowUp) {
+                        displayMessage.edit { content = "you pressed up" }
                     }
-                    button(null, Emojis.arrowLeft) {
+                    editButton(null, Emojis.arrowLeft) {
+                        displayMessage.edit { content = "you pressed left" }
                     }
-                    button(null, Emojis.arrowRight) {
+                    editButton(null, Emojis.arrowRight) {
+                        displayMessage.edit { content = "you pressed right" }
                     }
-                    button(null, Emojis.arrowDown) {
+                    editButton(null, Emojis.arrowDown) {
+                        displayMessage.edit { content = "you pressed down" }
                     }
                 }
-                actionRow {
-                    button(null, Emojis.a) {
+                buttons {
+                    editButton(null, Emojis.a) {
+                        displayMessage.edit { content = "you pressed a" }
                     }
-                    button(null, Emojis.b) {
+                    editButton(null, Emojis.b) {
+                        displayMessage.edit { content = "you pressed b" }
                     }
-                    button("start", null) {
+                    editButton("start", null) {
+                        displayMessage.edit { content = "you pressed start" }
                     }
-                    button("select", null) {
+                    editButton("select", null) {
+                        displayMessage.edit { content = "you pressed select" }
                     }
                 }
             }
