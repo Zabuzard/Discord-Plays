@@ -13,32 +13,37 @@ import java.io.File
 import javax.swing.JFrame
 
 @Service
-class GameService(private val clickController: ClickController) {
+class GameService(private val clickController: ClickController, private val imageDisplay: ImageDisplay) {
+    init {
+        // TODO Remove after debugging
+        start()
+    }
+
     fun start() {
         val romPath = "C:\\Users\\Zabuza\\Desktop\\Pokemon - Blue Version (UE)[!].zip"
 
-
         val options = GameboyOptions(File(romPath), listOf(), listOf())
         val cartridge = Cartridge(options)
-        val display = SwingDisplay(2)
-        //val controller = SwingController(Properties())
-        val controller = clickController
-        val soundOutput = AudioSystemSoundOutput()
         val serialEndpoint = SerialEndpoint.NULL_ENDPOINT
 
-        val gameboy = Gameboy(options, cartridge, display, controller, soundOutput, serialEndpoint)
+        val swingDisplay = SwingDisplay(2)
+        val display = CompositeDisplay(listOf(swingDisplay, imageDisplay))
 
-        display.preferredSize = Dimension(160 * 2, 144 * 2)
+        val soundOutput = AudioSystemSoundOutput()
+
+        val gameboy = Gameboy(options, cartridge, display, clickController, soundOutput, serialEndpoint)
+
+        swingDisplay.preferredSize = Dimension(160 * 2, 144 * 2)
         val mainWindow = JFrame(cartridge.title)
         mainWindow.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         mainWindow.setLocationRelativeTo(null)
-        mainWindow.contentPane = display
+        mainWindow.contentPane = swingDisplay
         mainWindow.isResizable = false
         mainWindow.isVisible = true
         mainWindow.pack()
         // mainWindow.addKeyListener(controller)
+        Thread(swingDisplay).start()
 
-        Thread(display).start()
         Thread(gameboy).start()
     }
 

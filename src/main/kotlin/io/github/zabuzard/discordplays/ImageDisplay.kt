@@ -2,30 +2,26 @@ package io.github.zabuzard.discordplays
 
 import eu.rekawek.coffeegb.gpu.Display
 import eu.rekawek.coffeegb.gui.SwingDisplay.translateGbcRgb
-import kotlinx.atomicfu.locks.withLock
+import me.jakejmattson.discordkt.annotations.Service
 import java.awt.Color
 import java.awt.Graphics
-import java.awt.Graphics2D
 import java.awt.image.BufferedImage
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.locks.ReentrantLock
-import javax.swing.JPanel
 
-class ImageDisplay(scale: Int = 2) : JPanel(), Display, Runnable {
-    private val scaledWidth = RESOLUTION_WIDTH * scale
-    private val scaledHeight = RESOLUTION_HEIGHT * scale
+@Service
+class ImageDisplay() : Display {
+    private val renderService = Executors.newSingleThreadExecutor()
 
     private val flatPixelRgb = IntArray(RESOLUTION_WIDTH * RESOLUTION_HEIGHT)
     private var pixelCursor = 0
 
     private var enabled = true
-    private var doStop = false
-    private var doRefresh = false
 
-    private val lock = ReentrantLock()
-    private val condition = lock.newCondition()
+    private var renderTask: Future<*>? = null
 
-    val img: BufferedImage =
+    private val img: BufferedImage =
         BufferedImage(RESOLUTION_WIDTH, RESOLUTION_HEIGHT, BufferedImage.TYPE_INT_RGB)
 
     override fun putDmgPixel(color: Int) {
@@ -38,14 +34,11 @@ class ImageDisplay(scale: Int = 2) : JPanel(), Display, Runnable {
     }
 
     override fun requestRefresh() {
-        doRefresh = true
-        condition.signalAll()
+        renderTask = renderService.submit(this::refresh)
     }
 
     override fun waitForRefresh() {
-        while (doRefresh) {
-            condition.await(1, TimeUnit.MILLISECONDS)
-        }
+        renderTask?.get(2, TimeUnit.SECONDS)
     }
 
     override fun enableLcd() {
@@ -56,54 +49,38 @@ class ImageDisplay(scale: Int = 2) : JPanel(), Display, Runnable {
         enabled = false
     }
 
-    override fun run() {
-        while (!doStop) {
-            lock.withLock {
-                condition.await(1, TimeUnit.MILLISECONDS)
-            }
+    @Synchronized
+    private fun refresh() {
+        img.setRGB(
+            0,
+            0,
+            RESOLUTION_WIDTH,
+            RESOLUTION_HEIGHT,
+            flatPixelRgb,
+            0,
+            RESOLUTION_WIDTH
+        )
 
-            if (doRefresh) {
-                img.setRGB(
-                    0,
-                    0,
-                    RESOLUTION_WIDTH,
-                    RESOLUTION_HEIGHT,
-                    flatPixelRgb,
-                    0,
-                    RESOLUTION_WIDTH
-                )
-                validate()
-                repaint()
-
-                lock.withLock {
-                    pixelCursor = 0
-                    doRefresh = false
-                    condition.signalAll()
-                }
-            }
-        }
+        pixelCursor = 0
+        renderTask = null
     }
 
-    fun stop() {
-        doStop = true
-    }
-
-    override fun paintComponent(g: Graphics) {
-        super.paintComponent(g)
-
-        val g2d = g.create() as Graphics2D
+    @Synchronized
+    fun render(g: Graphics, scale: Int = 2, x: Int = 0, y: Int = 0) {
         if (enabled) {
-            g2d.drawImage(img, 0, 0, scaledWidth, scaledHeight, null)
+            g.drawImage(img, x, y, RESOLUTION_WIDTH * scale, RESOLUTION_HEIGHT * scale, null)
         } else {
-            g2d.color = blankColor
-            g2d.drawRect(0, 0, scaledWidth, scaledHeight)
+            g.color = blankColor
+            g.drawRect(x, y, RESOLUTION_WIDTH * scale, RESOLUTION_HEIGHT * scale)
         }
-        g2d.dispose()
+    }
+
+    companion object {
+        const val RESOLUTION_WIDTH = 160
+        const val RESOLUTION_HEIGHT = 144
     }
 }
 
-private const val RESOLUTION_WIDTH = 160
-private const val RESOLUTION_HEIGHT = 144
 private val colors = intArrayOf(0xe6f8da, 0x99c886, 0x437969, 0x051f2a)
 private val blankColor = Color(colors[0])
 

@@ -18,37 +18,40 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                 page { description = "controls" }
 
                 buttons {
-                    editButton(null, Emojis.arrowUp) {
-                        displayMessage.edit { content = "you pressed up" }
-                        gameService.clickButton(ButtonListener.Button.UP)
-                    }
-                    editButton(null, Emojis.arrowLeft) {
-                        displayMessage.edit { content = "you pressed left" }
-                        gameService.clickButton(ButtonListener.Button.LEFT)
-                    }
-                    editButton(null, Emojis.arrowRight) {
-                        displayMessage.edit { content = "you pressed right" }
-                        gameService.clickButton(ButtonListener.Button.RIGHT)
-                    }
-                    editButton(null, Emojis.arrowDown) {
-                        displayMessage.edit { content = "you pressed down" }
-                        gameService.clickButton(ButtonListener.Button.DOWN)
-                    }
-                }
-                buttons {
-                    editButton(null, Emojis.a) {
+                    button(null, Emojis.a) {
                         displayMessage.edit { content = "you pressed a" }
                         gameService.clickButton(ButtonListener.Button.A)
                     }
-                    editButton(null, Emojis.b) {
+                    button(null, Emojis.arrowUp) {
+                        displayMessage.edit { content = "you pressed up" }
+                        gameService.clickButton(ButtonListener.Button.UP)
+                    }
+                    button(null, Emojis.b) {
                         displayMessage.edit { content = "you pressed b" }
                         gameService.clickButton(ButtonListener.Button.B)
                     }
-                    editButton("start", null) {
+                }
+                buttons {
+                    button(null, Emojis.arrowLeft) {
+                        displayMessage.edit { content = "you pressed left" }
+                        gameService.clickButton(ButtonListener.Button.LEFT)
+                    }
+                    button("‎", null, disabled = true) {}
+                    button(null, Emojis.arrowRight) {
+                        displayMessage.edit { content = "you pressed right" }
+                        gameService.clickButton(ButtonListener.Button.RIGHT)
+                    }
+                }
+                buttons {
+                    button(null, Emojis.heavyPlusSign) {
                         displayMessage.edit { content = "you pressed start" }
                         gameService.clickButton(ButtonListener.Button.START)
                     }
-                    editButton("select", null) {
+                    button(null, Emojis.arrowDown) {
+                        displayMessage.edit { content = "you pressed down" }
+                        gameService.clickButton(ButtonListener.Button.DOWN)
+                    }
+                    button(null, Emojis.heavyMinusSign) {
                         displayMessage.edit { content = "you pressed select" }
                         gameService.clickButton(ButtonListener.Button.SELECT)
                     }
