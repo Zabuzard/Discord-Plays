@@ -12,7 +12,8 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
-import kotlin.time.Duration.Companion.seconds
+import javax.imageio.stream.MemoryCacheImageOutputStream
+import kotlin.time.Duration.Companion.milliseconds
 
 fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.commands("game") {
     slash("game-start", "Start a new game") {
@@ -65,10 +66,18 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                     gameService.render(g, SCALE)
                     g.dispose()
 
-                    displayMessage.edit {
-                        files?.clear()
-                        addFile("image.$IMAGE_FORMAT", image.toInputStream())
-                        //content = "```\n${image.toAscii()}\n```"
+                    imageBuffer += image.copy()
+
+                    if (imageBuffer.size >= FLUSH_IMAGE_BUFFER_AT_SIZE) {
+                        val gif = imageBuffer.toGif()
+
+                        displayMessage.edit {
+                            files?.clear()
+                            addFile("image.gif", gif.toInputStream())
+                            //content = "```\n${image.toAscii()}\n```"
+                        }
+
+                        imageBuffer.clear()
                     }
 
                     delay(refreshRate)
@@ -78,7 +87,10 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
     }
 }
 
-private val refreshRate = (3).seconds//(1).seconds
+private val imageBuffer = mutableListOf<BufferedImage>()
+private const val FLUSH_IMAGE_BUFFER_AT_SIZE = 30
+
+private val refreshRate = (150).milliseconds//(1).seconds
 
 private const val SCALE = 7.0//0.28
 private val image = BufferedImage(
@@ -87,11 +99,31 @@ private val image = BufferedImage(
     BufferedImage.TYPE_INT_RGB
 )
 
-private const val IMAGE_FORMAT = "png"
+private fun List<BufferedImage>.toGif() =
+    ByteArrayOutputStream().also {
+        val stream = MemoryCacheImageOutputStream(it)
+
+        val gifSequence =
+            GifSequenceWriter(stream, image.type, refreshRate.inWholeMilliseconds.toInt())
+        forEach(gifSequence::writeToSequence)
+        gifSequence.close()
+        stream.close()
+        it.close()
+    }.toByteArray()
+
+private fun ByteArray.toInputStream() =
+    ByteArrayInputStream(this)
+
+private fun BufferedImage.copy() =
+    BufferedImage(width, height, type).also {
+        val g = it.createGraphics()
+        g.drawImage(this, 0, 0, null)
+        g.dispose()
+    }
 
 private fun BufferedImage.toInputStream() =
     ByteArrayOutputStream().also {
-        ImageIO.write(this, IMAGE_FORMAT, it)
+        ImageIO.write(this, "png", it)
     }.toByteArray().let(::ByteArrayInputStream)
 
 

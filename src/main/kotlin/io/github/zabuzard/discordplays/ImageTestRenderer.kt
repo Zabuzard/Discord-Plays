@@ -18,7 +18,7 @@ class ImageTestRenderer(private val imageDisplay: ImageDisplay) {
 
     init {
         // NOTE Comment in to have a test render
-        // renderService.scheduleAtFixedRate(this::render, 1000, 100, TimeUnit.MILLISECONDS)
+        renderService.scheduleAtFixedRate(this::render, 1000, 100, TimeUnit.MILLISECONDS)
     }
 
     private fun render() {
@@ -57,4 +57,4 @@ class ImageTestRenderer(private val imageDisplay: ImageDisplay) {
     }
 }
 
-private const val SCALE = 7.0
+private const val SCALE = 4.0
