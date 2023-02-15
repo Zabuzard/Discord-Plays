@@ -66,12 +66,15 @@ class ImageDisplay() : Display {
     }
 
     @Synchronized
-    fun render(g: Graphics, scale: Int = 2, x: Int = 0, y: Int = 0) {
+    fun render(g: Graphics, scale: Double = 2.0, x: Int = 0, y: Int = 0) {
+        val scaledWidth = (RESOLUTION_WIDTH * scale).toInt()
+        val scaledHeight = (RESOLUTION_HEIGHT * scale).toInt()
+
         if (enabled) {
-            g.drawImage(img, x, y, RESOLUTION_WIDTH * scale, RESOLUTION_HEIGHT * scale, null)
+            g.drawImage(img, x, y, scaledWidth, scaledHeight, null)
         } else {
             g.color = blankColor
-            g.drawRect(x, y, RESOLUTION_WIDTH * scale, RESOLUTION_HEIGHT * scale)
+            g.drawRect(x, y, scaledWidth, scaledHeight)
         }
     }
 

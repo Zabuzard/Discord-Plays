@@ -7,6 +7,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import me.jakejmattson.discordkt.extensions.createMenu
+import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -67,6 +68,7 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                     displayMessage.edit {
                         files?.clear()
                         addFile("image.$IMAGE_FORMAT", image.toInputStream())
+                        //content = "```\n${image.toAscii()}\n```"
                     }
 
                     delay(refreshRate)
@@ -76,12 +78,12 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
     }
 }
 
-private val refreshRate = (3).seconds
+private val refreshRate = (3).seconds//(1).seconds
 
-private const val SCALE = 7
+private const val SCALE = 7//0.28
 private val image = BufferedImage(
-    ImageDisplay.RESOLUTION_WIDTH * SCALE,
-    ImageDisplay.RESOLUTION_HEIGHT * SCALE,
+    (ImageDisplay.RESOLUTION_WIDTH * SCALE).toInt(),
+    (ImageDisplay.RESOLUTION_HEIGHT * SCALE).toInt(),
     BufferedImage.TYPE_INT_RGB
 )
 
@@ -91,3 +93,32 @@ private fun BufferedImage.toInputStream() =
     ByteArrayOutputStream().also {
         ImageIO.write(this, IMAGE_FORMAT, it)
     }.toByteArray().let(::ByteArrayInputStream)
+
+
+private fun BufferedImage.toAscii(): String {
+    val result = StringBuilder((this.width + 1) * this.height)
+    for (y in 0 until this.height) {
+        if (result.isNotEmpty()) result.append("\n")
+        for (x in 0 until this.width) {
+            val pixelColor = Color(this.getRGB(x, y))
+            val grayScaleValue =
+                pixelColor.red.toDouble() * 0.2989 + pixelColor.blue.toDouble() * 0.5870 + pixelColor.green.toDouble() * 0.1140
+            val symbol = grayScaleValue.grayScaleToAscii()
+            result.append(symbol)
+        }
+    }
+    return result.toString()
+}
+
+private fun Double.grayScaleToAscii() =
+    when {
+        this >= 230.0 -> ' '
+        this >= 200.0 -> '.'
+        this >= 180.0 -> '*'
+        this >= 160.0 -> ':'
+        this >= 130.0 -> 'o'
+        this >= 100.0 -> '&'
+        this >= 70.0 -> '8'
+        this >= 50.0 -> '#'
+        else -> '@'
+    }

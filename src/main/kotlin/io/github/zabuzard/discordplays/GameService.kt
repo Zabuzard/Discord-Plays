@@ -53,7 +53,7 @@ class GameService(private val clickController: ClickController, private val imag
     suspend fun clickButton(button: ButtonListener.Button) =
         clickController.clickButton(button)
 
-    fun render(g: Graphics, scale: Int = 2, x: Int = 0, y: Int = 0) {
+    fun render(g: Graphics, scale: Double = 2.0, x: Int = 0, y: Int = 0) {
         imageDisplay.render(g, scale, x, y)
     }
 }

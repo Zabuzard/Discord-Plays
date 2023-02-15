@@ -23,8 +23,8 @@ class ImageTestRenderer(private val imageDisplay: ImageDisplay) {
 
     private fun render() {
         val image = BufferedImage(
-            ImageDisplay.RESOLUTION_WIDTH * SCALE,
-            ImageDisplay.RESOLUTION_HEIGHT * SCALE,
+            (ImageDisplay.RESOLUTION_WIDTH * SCALE).toInt(),
+            (ImageDisplay.RESOLUTION_HEIGHT * SCALE).toInt(),
             BufferedImage.TYPE_INT_RGB
         )
 
@@ -57,4 +57,4 @@ class ImageTestRenderer(private val imageDisplay: ImageDisplay) {
     }
 }
 
-private const val SCALE = 7
+private const val SCALE = 7.0
