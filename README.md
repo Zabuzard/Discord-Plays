@@ -1,4 +1,4 @@
-# Discord-Plays
+# Discord-Plays ![emoji](https://i.imgur.com/Hs2Wohm.png)
 
 Discord bot to play games together, inspired by Twitch Plays Pokemon
 
