@@ -13,3 +13,10 @@ Image renderer (3s refresh rate, 720p)
 Ascii renderer (1s refresh rate, 50x40)
 
 ![ascii render](https://i.imgur.com/yL8Ors7.gif)
+
+## Tech Stack
+
+* Kotlin
+* Gradle
+* [DiscordKt](https://github.com/DiscordKt/DiscordKt)
+* [Coffee GB](https://github.com/trekawek/coffee-gb)
