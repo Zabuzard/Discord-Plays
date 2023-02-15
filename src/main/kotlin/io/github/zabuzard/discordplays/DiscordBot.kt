@@ -80,7 +80,7 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
 
 private val refreshRate = (3).seconds//(1).seconds
 
-private const val SCALE = 7//0.28
+private const val SCALE = 7.0//0.28
 private val image = BufferedImage(
     (ImageDisplay.RESOLUTION_WIDTH * SCALE).toInt(),
     (ImageDisplay.RESOLUTION_HEIGHT * SCALE).toInt(),
