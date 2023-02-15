@@ -9,6 +9,7 @@ import eu.rekawek.coffeegb.memory.cart.Cartridge
 import eu.rekawek.coffeegb.serial.SerialEndpoint
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.Dimension
+import java.awt.Graphics
 import java.io.File
 import javax.swing.JFrame
 
@@ -16,7 +17,7 @@ import javax.swing.JFrame
 class GameService(private val clickController: ClickController, private val imageDisplay: ImageDisplay) {
     init {
         // TODO Remove after debugging
-        start()
+        // start()
     }
 
     fun start() {
@@ -26,13 +27,14 @@ class GameService(private val clickController: ClickController, private val imag
         val cartridge = Cartridge(options)
         val serialEndpoint = SerialEndpoint.NULL_ENDPOINT
 
-        val swingDisplay = SwingDisplay(2)
-        val display = CompositeDisplay(listOf(swingDisplay, imageDisplay))
+        //val swingDisplay = SwingDisplay(2)
+        val display = CompositeDisplay(listOf(imageDisplay))
 
         val soundOutput = AudioSystemSoundOutput()
 
         val gameboy = Gameboy(options, cartridge, display, clickController, soundOutput, serialEndpoint)
 
+        /*
         swingDisplay.preferredSize = Dimension(160 * 2, 144 * 2)
         val mainWindow = JFrame(cartridge.title)
         mainWindow.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
@@ -41,12 +43,17 @@ class GameService(private val clickController: ClickController, private val imag
         mainWindow.isResizable = false
         mainWindow.isVisible = true
         mainWindow.pack()
-        // mainWindow.addKeyListener(controller)
+        mainWindow.addKeyListener(controller)
         Thread(swingDisplay).start()
+         */
 
         Thread(gameboy).start()
     }
 
     suspend fun clickButton(button: ButtonListener.Button) =
         clickController.clickButton(button)
+
+    fun render(g: Graphics, scale: Int = 2, x: Int = 0, y: Int = 0) {
+        imageDisplay.render(g, scale, x, y)
+    }
 }
