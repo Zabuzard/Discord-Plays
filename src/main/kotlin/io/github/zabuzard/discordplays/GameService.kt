@@ -17,7 +17,8 @@ import javax.swing.JFrame
 @Service
 class GameService(
     private val clickController: ClickController,
-    private val imageDisplay: ImageDisplay
+    private val imageDisplay: ImageDisplay,
+    private val config: Config
 ) {
     private val localOnly = true
 
@@ -33,7 +34,7 @@ class GameService(
 
 
     fun start() {
-        val romPath = "C:\\Users\\Zabuza\\Desktop\\Pokemon - Blue Version (UE)[!].zip"
+        val romPath = config.romPath
 
         val options = GameboyOptions(File(romPath), listOf(), listOf())
         val cartridge = Cartridge(options)
