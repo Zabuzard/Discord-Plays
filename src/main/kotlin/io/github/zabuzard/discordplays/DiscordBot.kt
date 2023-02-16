@@ -2,11 +2,13 @@ package io.github.zabuzard.discordplays
 
 import com.sksamuel.aedile.core.caffeineBuilder
 import dev.kord.common.entity.Snowflake
+import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.interaction.respondEphemeral
 import dev.kord.x.emoji.DiscordEmoji
 import dev.kord.x.emoji.Emojis
 import eu.rekawek.coffeegb.controller.ButtonListener
+import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -23,6 +25,7 @@ import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 import javax.imageio.stream.MemoryCacheImageOutputStream
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.commands("game") {
@@ -36,25 +39,27 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                 since = Clock.System.now()
             }
 
-            val displayMessage = channel.createMessage("display...")
+            val displayMessage = channel.createMessage {
+                addFile("image.png", image.toInputStream())
+            }
 
             channel.createMenu {
-                page { description = "controls" }
+                page { this.description = "Click to play!" }
 
                 buttons {
-                    controlButton(Emojis.a, ButtonListener.Button.A, gameService)
-                    controlButton(Emojis.arrowUp, ButtonListener.Button.UP, gameService)
-                    controlButton(Emojis.b, ButtonListener.Button.B, gameService)
+                    controlButton(Emojis.a, Button.A, gameService)
+                    controlButton(Emojis.arrowUp, Button.UP, gameService)
+                    controlButton(Emojis.b, Button.B, gameService)
                 }
                 buttons {
-                    controlButton(Emojis.arrowLeft, ButtonListener.Button.LEFT, gameService)
+                    controlButton(Emojis.arrowLeft, Button.LEFT, gameService)
                     button("‎", null, disabled = true) {}
-                    controlButton(Emojis.arrowRight, ButtonListener.Button.RIGHT, gameService)
+                    controlButton(Emojis.arrowRight, Button.RIGHT, gameService)
                 }
                 buttons {
-                    controlButton(Emojis.heavyPlusSign, ButtonListener.Button.START, gameService)
-                    controlButton(Emojis.arrowDown, ButtonListener.Button.DOWN, gameService)
-                    controlButton(Emojis.heavyMinusSign, ButtonListener.Button.SELECT, gameService)
+                    controlButton(Emojis.heavyPlusSign, Button.START, gameService)
+                    controlButton(Emojis.arrowDown, Button.DOWN, gameService)
+                    controlButton(Emojis.heavyMinusSign, Button.SELECT, gameService)
                 }
             }
 
@@ -62,7 +67,9 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                 while (isActive) {
                     val g = image.createGraphics()
                     gameService.render(g, SCALE)
-                    renderOverlay(g)
+                    synchronized(lock) {
+                        renderOverlay(g)
+                    }
                     g.dispose()
 
                     imageBuffer += image.copy()
@@ -97,20 +104,45 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
 }
 
 private fun renderOverlay(g: Graphics2D) {
-    val overlayStartX = image.width - INPUT_OVERLAY_WIDTH
-    val nameOffsetX = 30
+    g.color = Color.BLACK
+    g.fillRect(overlayStartX, 0, INPUT_OVERLAY_WIDTH, image.height)
 
-    g.color = Color.WHITE
-    repeat(15) {
-        g.font = Font("Arial", Font.PLAIN, 35)
+    g.font = Font("Arial", Font.BOLD, 20)
 
-        g.drawString("Zabuzard $it  ↑", overlayStartX + nameOffsetX , 50 + 70 * it)
+    val limitedUserInputHistory =
+        userInputHistory.asReversed().take(USER_INPUT_HISTORY_MAX_ENTRIES_SHOWN)
+
+    val buttonLabelOffsetX = 15
+    val nameOffsetX = 40
+    val now = Clock.System.now()
+    for ((i, userInput) in limitedUserInputHistory.withIndex()) {
+        g.color =
+            if (now - userInput.sendAt < userInputHistoryEntryOldAfter) Color.WHITE else Color.GRAY
+        val y = 40 + 45 * i
+
+        val buttonLabel = when (userInput.input) {
+            Button.A -> "A"
+            Button.B -> "B"
+            Button.START -> "+"
+            Button.SELECT -> "-"
+            Button.UP -> "^"
+            Button.DOWN -> "v"
+            Button.LEFT -> "<"
+            Button.RIGHT -> ">"
+        }
+
+        g.drawString(buttonLabel, overlayStartX + buttonLabelOffsetX, y)
+        g.drawString(
+            userInput.userName.take(USER_INPUT_HISTORY_MAX_NAME_LENGTH),
+            overlayStartX + nameOffsetX,
+            y
+        )
     }
 }
 
 private fun MenuButtonRowBuilder.controlButton(
     emoji: DiscordEmoji,
-    button: ButtonListener.Button,
+    button: Button,
     gameService: GameService
 ) {
     actionButton(null, emoji) {
@@ -122,7 +154,11 @@ private fun MenuButtonRowBuilder.controlButton(
             timeSinceLastInput >= userInputRateLimit -> {
                 gameService.clickButton(button)
                 deferEphemeralMessageUpdate()
+
                 userInputCache.put(user.id, now)
+                synchronized(lock) {
+                    userInputHistory += UserInput(user.username, button, Clock.System.now())
+                }
             }
 
             else -> respondEphemeral {
@@ -133,11 +169,25 @@ private fun MenuButtonRowBuilder.controlButton(
     }
 }
 
+private val lock = Object()
+
+private fun sanitizeUserInputHistory() {
+    val now = Clock.System.now()
+    userInputHistory.removeIf { now - it.sendAt >= userInputHistoryExpiresAfter }
+}
+
+private data class UserInput(val userName: String, val input: Button, val sendAt: Instant)
+
 private val userInputCache = caffeineBuilder<Snowflake, Instant> {
     maximumSize = 1_000
     expireAfterWrite = (10).seconds
 }.build()
-private val userInputRateLimit = (2).seconds
+private val userInputRateLimit = (1.5).seconds
+private var userInputHistory: MutableList<UserInput> = ArrayDeque()
+private val userInputHistoryExpiresAfter = (2).minutes
+private const val USER_INPUT_HISTORY_MAX_ENTRIES_SHOWN = 12
+private const val USER_INPUT_HISTORY_MAX_NAME_LENGTH = 12
+private val userInputHistoryEntryOldAfter = (10).seconds
 
 private val imageBuffer = mutableListOf<BufferedImage>()
 private const val FLUSH_IMAGE_BUFFER_AT_SIZE = 30
@@ -148,13 +198,15 @@ private val frameCaptureRefreshRate = (150).milliseconds
 // smoother and does not display the last frame for a longer time
 private val gifFrameReplayRefreshRate = (220).milliseconds
 
-private const val INPUT_OVERLAY_WIDTH = 300
-private const val SCALE = 7.0//0.28
+private const val INPUT_OVERLAY_WIDTH = 170
+private const val SCALE = 4.0//0.28
 private val image = BufferedImage(
     (ImageDisplay.RESOLUTION_WIDTH * SCALE).toInt() + INPUT_OVERLAY_WIDTH,
     (ImageDisplay.RESOLUTION_HEIGHT * SCALE).toInt(),
     BufferedImage.TYPE_INT_RGB
 )
+
+private val overlayStartX = image.width - INPUT_OVERLAY_WIDTH
 
 private fun List<BufferedImage>.toGif() =
     ByteArrayOutputStream().also {
