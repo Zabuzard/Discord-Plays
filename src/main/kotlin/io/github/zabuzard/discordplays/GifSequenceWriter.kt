@@ -21,7 +21,8 @@ import javax.imageio.stream.ImageOutputStream
 class GifSequenceWriter(
     outputStream: ImageOutputStream,
     imageType: Int,
-    timeBetweenFramesMS: Int
+    timeBetweenFramesMS: Int,
+    shouldLoop: Boolean = false
 ) {
     private val gifWriter: ImageWriter = getWriter()
     private val imageWriteParam: ImageWriteParam = gifWriter.defaultWriteParam
@@ -66,17 +67,20 @@ class GifSequenceWriter(
         )
         val commentsNode = getNode(root, "CommentExtensions")
         commentsNode.setAttribute("CommentExtension", "Created by MAH")
-        val appExtensionsNode = getNode(
-            root,
-            "ApplicationExtensions"
-        )
-        val child = IIOMetadataNode("ApplicationExtension")
-        child.setAttribute("applicationID", "NETSCAPE")
-        child.setAttribute("authenticationCode", "2.0")
 
-        //child.userObject = ubyteArrayOf(0x0u, 0x08u, 0xFEu).toByteArray()
-        child.userObject = ubyteArrayOf(0x1u, 0x08u, 0xFEu).toByteArray()
-        appExtensionsNode.appendChild(child)
+        if (shouldLoop) {
+            val appExtensionsNode = getNode(
+                root,
+                "ApplicationExtensions"
+            )
+            val child = IIOMetadataNode("ApplicationExtension")
+            child.setAttribute("applicationID", "NETSCAPE")
+            child.setAttribute("authenticationCode", "2.0")
+
+            child.userObject = ubyteArrayOf(0x1u, 0x0u, 0x0u).toByteArray()
+            appExtensionsNode.appendChild(child)
+        }
+
         imageMetaData.setFromTree(metaFormatName, root)
         gifWriter.output = outputStream
         gifWriter.prepareWriteSequence(null)
