@@ -23,12 +23,11 @@ class GameService(private val clickController: ClickController, private val imag
     }
 
     //var to hold gameboyInstance
-    lateinit var gameboyInstance: Gameboy
+    lateinit var gameboy: Gameboy
 
 
     fun start() {
         val romPath = "C:\\Users\\Zabuza\\Desktop\\Pokemon - Blue Version (UE)[!].zip"
-
 
         val options = GameboyOptions(File(romPath), listOf(), listOf())
         val cartridge = Cartridge(options)
@@ -40,7 +39,6 @@ class GameService(private val clickController: ClickController, private val imag
         //val soundOutput = AudioSystemSoundOutput()
         //to turn off soundOutput
         val soundOutput=SoundOutput.NULL_OUTPUT
-
 
 
         /*
@@ -55,15 +53,12 @@ class GameService(private val clickController: ClickController, private val imag
         mainWindow.addKeyListener(controller)
         Thread(swingDisplay).start()
          */
-        val gameboy = Gameboy(options, cartridge, display, clickController, soundOutput, serialEndpoint)
-
-        gameboyInstance=gameboy
-
+        gameboy = Gameboy(options, cartridge, display, clickController, soundOutput, serialEndpoint)
 
         Thread(gameboy).start()
     }
     fun stop(){
-        gameboyInstance.stop()
+        gameboy.stop()
     }
 
     suspend fun clickButton(button: ButtonListener.Button) =
@@ -72,4 +67,6 @@ class GameService(private val clickController: ClickController, private val imag
     fun render(g: Graphics, scale: Double = 2.0, x: Int = 0, y: Int = 0) {
         imageDisplay.render(g, scale, x, y)
     }
+
+
 }
