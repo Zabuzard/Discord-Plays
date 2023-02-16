@@ -3,20 +3,17 @@ package io.github.zabuzard.discordplays
 import eu.rekawek.coffeegb.Gameboy
 import eu.rekawek.coffeegb.GameboyOptions
 import eu.rekawek.coffeegb.controller.ButtonListener
-import eu.rekawek.coffeegb.gui.AudioSystemSoundOutput
-import eu.rekawek.coffeegb.gui.SwingDisplay
 import eu.rekawek.coffeegb.memory.cart.Cartridge
 import eu.rekawek.coffeegb.serial.SerialEndpoint
-import eu.rekawek.coffeegb.sound.SoundOutput
-import io.ktor.util.reflect.*
 import me.jakejmattson.discordkt.annotations.Service
-import java.awt.Dimension
 import java.awt.Graphics
 import java.io.File
-import javax.swing.JFrame
 
 @Service
-class GameService(private val clickController: ClickController, private val imageDisplay: ImageDisplay) {
+class GameService(
+    private val clickController: ClickController,
+    private val imageDisplay: ImageDisplay
+) {
     init {
         // TODO Remove after debugging
         // start()
@@ -36,10 +33,8 @@ class GameService(private val clickController: ClickController, private val imag
         //val swingDisplay = SwingDisplay(2)
         val display = CompositeDisplay(listOf(imageDisplay))
 
-        //val soundOutput = AudioSystemSoundOutput()
-        //to turn off soundOutput
-        val soundOutput=SoundOutput.NULL_OUTPUT
-
+        val soundOutput = VolumeControlSoundOutput()
+        soundOutput.mute()
 
         /*
         swingDisplay.preferredSize = Dimension(160 * 2, 144 * 2)
@@ -57,7 +52,8 @@ class GameService(private val clickController: ClickController, private val imag
 
         Thread(gameboy).start()
     }
-    fun stop(){
+
+    fun stop() {
         gameboy.stop()
     }
 
