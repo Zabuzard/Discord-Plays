@@ -6,13 +6,7 @@ Discord bot to play games together, inspired by Twitch Plays Pokemon
 
 ## Demo
 
-Image renderer (3s refresh rate, 720p)
-
-![image render](https://i.imgur.com/fobfGLf.gif)
-
-Ascii renderer (1s refresh rate, 50x40)
-
-![ascii render](https://i.imgur.com/yL8Ors7.gif)
+![image render](https://i.imgur.com/q8JNgfr.gif)
 
 ## Tech Stack
 
