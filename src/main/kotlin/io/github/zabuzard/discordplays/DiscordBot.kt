@@ -6,6 +6,7 @@ import eu.rekawek.coffeegb.controller.ButtonListener
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.datetime.Clock
 import me.jakejmattson.discordkt.extensions.createMenu
 import java.awt.Color
 import java.awt.image.BufferedImage
@@ -21,10 +22,12 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
             respond("Starting a game")
 
             gameService.start()
-
+            discord.kord.editPresence {
+                playing(gameService.title)
+                since = Clock.System.now()
+            }
 
             val displayMessage = channel.createMessage("display...")
-
 
             channel.createMenu {
                 page { description = "controls" }
@@ -71,9 +74,6 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                     imageBuffer += image.copy()
 
                     if (imageBuffer.size >= FLUSH_IMAGE_BUFFER_AT_SIZE) {
-                        // TODO Just for testing
-                        imageBuffer[imageBuffer.lastIndex] = testImage
-
                         val gif = imageBuffer.toGif()
 
                         displayMessage.edit {
@@ -94,8 +94,10 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
     slash("game-stop", "Quitting game") {
         execute {
 
-            respond ("Quitting game")
+            respondPublic("Quitting game")
             gameService.stop()
+
+            discord.kord.editPresence {}
         }
     }
 }
@@ -104,6 +106,7 @@ private val imageBuffer = mutableListOf<BufferedImage>()
 private const val FLUSH_IMAGE_BUFFER_AT_SIZE = 30
 
 private val frameCaptureRefreshRate = (150).milliseconds
+
 // GIF plays slower to account for the loading times, that way the experience is
 // smoother and does not display the last frame for a longer time
 private val gifFrameReplayRefreshRate = (220).milliseconds
@@ -114,13 +117,6 @@ private val image = BufferedImage(
     (ImageDisplay.RESOLUTION_HEIGHT * SCALE).toInt(),
     BufferedImage.TYPE_INT_RGB
 )
-
-private val testImage = BufferedImage(image.width, image.height, image.type).also {
-    val g = it.createGraphics()
-    g.color = Color.RED
-    g.fillRect(0, 0, it.width, it.height)
-    g.dispose()
-}
 
 private fun List<BufferedImage>.toGif() =
     ByteArrayOutputStream().also {

@@ -20,17 +20,15 @@ class GameService(
     private val imageDisplay: ImageDisplay,
     private val config: Config
 ) {
-    private val localOnly = true
-
     init {
-        // TODO Remove after debugging
-        if (localOnly) {
+        if (config.localOnly) {
             start()
         }
     }
 
-    //var to hold gameboyInstance
-    lateinit var gameboy: Gameboy
+    private lateinit var gameboy: Gameboy
+
+    lateinit var title: String
 
 
     fun start() {
@@ -40,14 +38,14 @@ class GameService(
         val cartridge = Cartridge(options)
         val serialEndpoint = SerialEndpoint.NULL_ENDPOINT
 
-        val display = if (localOnly) SwingDisplay(2) else imageDisplay
+        val display = if (config.localOnly) SwingDisplay(2) else imageDisplay
 
-        val controller = if (localOnly) SwingController(Properties()) else clickController
+        val controller = if (config.localOnly) SwingController(Properties()) else clickController
 
         val soundOutput = VolumeControlSoundOutput()
         soundOutput.mute()
 
-        if (localOnly) {
+        if (config.localOnly) {
             val swingDisplay = display as SwingDisplay
             val swingController = controller as SwingController
 
@@ -63,6 +61,7 @@ class GameService(
             Thread(swingDisplay).start()
         }
 
+        title = cartridge.title
         gameboy = Gameboy(options, cartridge, display, controller, soundOutput, serialEndpoint)
 
         Thread(gameboy).start()

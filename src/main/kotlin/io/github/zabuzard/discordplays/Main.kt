@@ -2,6 +2,7 @@ package io.github.zabuzard.discordplays
 
 import dev.kord.common.annotation.KordPreview
 import me.jakejmattson.discordkt.dsl.bot
+import java.util.*
 
 @OptIn(KordPreview::class)
 fun main(args: Array<String>) {
@@ -14,5 +15,13 @@ fun main(args: Array<String>) {
 
     bot(token) {
         data("config.json") { Config() }
+
+        configure {
+            mentionAsPrefix = false
+            logStartup = false
+            searchCommands = false
+            dualRegistry = false
+            commandReaction = null
+        }
     }
 }
