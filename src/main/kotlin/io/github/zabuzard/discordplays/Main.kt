@@ -8,7 +8,9 @@ fun main(args: Array<String>) {
                 "Supplied arguments: ${args.contentToString()}"
     }
 
-    val token = args.first()
+   val token = args.first()
 
-    bot(token) {}
+
+    bot(token) {
+    }
 }

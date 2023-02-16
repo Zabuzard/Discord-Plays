@@ -22,7 +22,9 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
 
             gameService.start()
 
+
             val displayMessage = channel.createMessage("display...")
+
 
             channel.createMenu {
                 page { description = "controls" }
@@ -86,6 +88,14 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                     delay(frameCaptureRefreshRate)
                 }
             }
+        }
+    }
+
+    slash("game-stop", "Quitting game") {
+        execute {
+
+            respond ("Quitting game")
+            gameService.stop()
         }
     }
 }

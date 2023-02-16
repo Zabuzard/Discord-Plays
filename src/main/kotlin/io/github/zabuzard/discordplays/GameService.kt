@@ -7,6 +7,8 @@ import eu.rekawek.coffeegb.gui.AudioSystemSoundOutput
 import eu.rekawek.coffeegb.gui.SwingDisplay
 import eu.rekawek.coffeegb.memory.cart.Cartridge
 import eu.rekawek.coffeegb.serial.SerialEndpoint
+import eu.rekawek.coffeegb.sound.SoundOutput
+import io.ktor.util.reflect.*
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.Dimension
 import java.awt.Graphics
@@ -20,8 +22,13 @@ class GameService(private val clickController: ClickController, private val imag
         // start()
     }
 
+    //var to hold gameboyInstance
+    lateinit var gameboyInstance: Gameboy
+
+
     fun start() {
         val romPath = "C:\\Users\\Zabuza\\Desktop\\Pokemon - Blue Version (UE)[!].zip"
+
 
         val options = GameboyOptions(File(romPath), listOf(), listOf())
         val cartridge = Cartridge(options)
@@ -30,9 +37,11 @@ class GameService(private val clickController: ClickController, private val imag
         //val swingDisplay = SwingDisplay(2)
         val display = CompositeDisplay(listOf(imageDisplay))
 
-        val soundOutput = AudioSystemSoundOutput()
+        //val soundOutput = AudioSystemSoundOutput()
+        //to turn off soundOutput
+        val soundOutput=SoundOutput.NULL_OUTPUT
 
-        val gameboy = Gameboy(options, cartridge, display, clickController, soundOutput, serialEndpoint)
+
 
         /*
         swingDisplay.preferredSize = Dimension(160 * 2, 144 * 2)
@@ -46,8 +55,15 @@ class GameService(private val clickController: ClickController, private val imag
         mainWindow.addKeyListener(controller)
         Thread(swingDisplay).start()
          */
+        val gameboy = Gameboy(options, cartridge, display, clickController, soundOutput, serialEndpoint)
+
+        gameboyInstance=gameboy
+
 
         Thread(gameboy).start()
+    }
+    fun stop(){
+        gameboyInstance.stop()
     }
 
     suspend fun clickButton(button: ButtonListener.Button) =
