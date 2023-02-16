@@ -74,7 +74,8 @@ class GifSequenceWriter(
         child.setAttribute("applicationID", "NETSCAPE")
         child.setAttribute("authenticationCode", "2.0")
 
-        child.userObject = ubyteArrayOf(0x0u, 0x08u, 0xFEu).toByteArray()
+        //child.userObject = ubyteArrayOf(0x0u, 0x08u, 0xFEu).toByteArray()
+        child.userObject = ubyteArrayOf(0x1u, 0x08u, 0xFEu).toByteArray()
         appExtensionsNode.appendChild(child)
         imageMetaData.setFromTree(metaFormatName, root)
         gifWriter.output = outputStream

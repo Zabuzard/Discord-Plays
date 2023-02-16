@@ -91,6 +91,7 @@ private val imageBuffer = mutableListOf<BufferedImage>()
 private const val FLUSH_IMAGE_BUFFER_AT_SIZE = 30
 
 private val refreshRate = (150).milliseconds//(1).seconds
+private const val SPEED_UP_GIF_FACTOR = 2.0
 
 private const val SCALE = 7.0//0.28
 private val image = BufferedImage(
@@ -104,7 +105,11 @@ private fun List<BufferedImage>.toGif() =
         val stream = MemoryCacheImageOutputStream(it)
 
         val gifSequence =
-            GifSequenceWriter(stream, image.type, refreshRate.inWholeMilliseconds.toInt())
+            GifSequenceWriter(
+                stream,
+                image.type,
+                (refreshRate.inWholeMilliseconds.toInt() / SPEED_UP_GIF_FACTOR).toInt()
+            )
         forEach(gifSequence::writeToSequence)
         gifSequence.close()
         stream.close()
