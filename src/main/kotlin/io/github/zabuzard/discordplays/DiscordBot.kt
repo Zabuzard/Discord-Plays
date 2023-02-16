@@ -69,6 +69,9 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                     imageBuffer += image.copy()
 
                     if (imageBuffer.size >= FLUSH_IMAGE_BUFFER_AT_SIZE) {
+                        // TODO Just for testing
+                        imageBuffer[imageBuffer.lastIndex] = testImage
+
                         val gif = imageBuffer.toGif()
 
                         displayMessage.edit {
@@ -80,7 +83,7 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                         imageBuffer.clear()
                     }
 
-                    delay(refreshRate)
+                    delay(frameCaptureRefreshRate)
                 }
             }
         }
@@ -90,8 +93,8 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
 private val imageBuffer = mutableListOf<BufferedImage>()
 private const val FLUSH_IMAGE_BUFFER_AT_SIZE = 30
 
-private val refreshRate = (150).milliseconds//(1).seconds
-private const val SPEED_UP_GIF_FACTOR = 2.0
+private val frameCaptureRefreshRate = (150).milliseconds
+private val gifFrameReplayRefreshRate = (220).milliseconds
 
 private const val SCALE = 7.0//0.28
 private val image = BufferedImage(
@@ -99,6 +102,13 @@ private val image = BufferedImage(
     (ImageDisplay.RESOLUTION_HEIGHT * SCALE).toInt(),
     BufferedImage.TYPE_INT_RGB
 )
+
+private val testImage = BufferedImage(image.width, image.height, image.type).also {
+    val g = it.createGraphics()
+    g.color = Color.RED
+    g.fillRect(0, 0, it.width, it.height)
+    g.dispose()
+}
 
 private fun List<BufferedImage>.toGif() =
     ByteArrayOutputStream().also {
@@ -108,7 +118,7 @@ private fun List<BufferedImage>.toGif() =
             GifSequenceWriter(
                 stream,
                 image.type,
-                (refreshRate.inWholeMilliseconds.toInt() / SPEED_UP_GIF_FACTOR).toInt()
+                gifFrameReplayRefreshRate.inWholeMilliseconds.toInt()
             )
         forEach(gifSequence::writeToSequence)
         gifSequence.close()
