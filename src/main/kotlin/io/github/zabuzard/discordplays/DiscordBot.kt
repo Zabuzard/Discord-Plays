@@ -104,6 +104,8 @@ private val imageBuffer = mutableListOf<BufferedImage>()
 private const val FLUSH_IMAGE_BUFFER_AT_SIZE = 30
 
 private val frameCaptureRefreshRate = (150).milliseconds
+// GIF plays slower to account for the loading times, that way the experience is
+// smoother and does not display the last frame for a longer time
 private val gifFrameReplayRefreshRate = (220).milliseconds
 
 private const val SCALE = 7.0//0.28

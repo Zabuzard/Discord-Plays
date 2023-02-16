@@ -16,7 +16,7 @@ class ClickController: Controller {
 
     suspend fun clickButton(button: Button) {
         buttonListener.onButtonPress(button)
-        delay(500)
+        delay(250)
         buttonListener.onButtonRelease(button)
     }
 }
