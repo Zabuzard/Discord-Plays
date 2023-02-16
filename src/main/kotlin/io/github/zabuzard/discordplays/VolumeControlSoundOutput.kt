@@ -6,7 +6,7 @@ import eu.rekawek.coffeegb.sound.SoundOutput
 class VolumeControlSoundOutput : SoundOutput {
     private val delegate = AudioSystemSoundOutput()
 
-    private var fullVolume = false
+    private var fullVolume = true
 
     override fun start() {
         delegate.start()
