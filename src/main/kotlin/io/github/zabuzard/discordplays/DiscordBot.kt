@@ -4,7 +4,6 @@ import com.sksamuel.aedile.core.caffeineBuilder
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.interaction.respondEphemeral
-import dev.kord.core.entity.interaction.ComponentInteraction
 import dev.kord.x.emoji.DiscordEmoji
 import dev.kord.x.emoji.Emojis
 import eu.rekawek.coffeegb.controller.ButtonListener
@@ -16,12 +15,13 @@ import kotlinx.datetime.Instant
 import me.jakejmattson.discordkt.dsl.MenuButtonRowBuilder
 import me.jakejmattson.discordkt.extensions.createMenu
 import java.awt.Color
+import java.awt.Font
+import java.awt.Graphics2D
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 import javax.imageio.stream.MemoryCacheImageOutputStream
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -62,6 +62,7 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                 while (isActive) {
                     val g = image.createGraphics()
                     gameService.render(g, SCALE)
+                    renderOverlay(g)
                     g.dispose()
 
                     imageBuffer += image.copy()
@@ -92,6 +93,18 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
 
             discord.kord.editPresence {}
         }
+    }
+}
+
+private fun renderOverlay(g: Graphics2D) {
+    val overlayStartX = image.width - INPUT_OVERLAY_WIDTH
+    val nameOffsetX = 30
+
+    g.color = Color.WHITE
+    repeat(15) {
+        g.font = Font("Arial", Font.PLAIN, 35)
+
+        g.drawString("Zabuzard $it  ↑", overlayStartX + nameOffsetX , 50 + 70 * it)
     }
 }
 
@@ -135,9 +148,10 @@ private val frameCaptureRefreshRate = (150).milliseconds
 // smoother and does not display the last frame for a longer time
 private val gifFrameReplayRefreshRate = (220).milliseconds
 
+private const val INPUT_OVERLAY_WIDTH = 300
 private const val SCALE = 7.0//0.28
 private val image = BufferedImage(
-    (ImageDisplay.RESOLUTION_WIDTH * SCALE).toInt(),
+    (ImageDisplay.RESOLUTION_WIDTH * SCALE).toInt() + INPUT_OVERLAY_WIDTH,
     (ImageDisplay.RESOLUTION_HEIGHT * SCALE).toInt(),
     BufferedImage.TYPE_INT_RGB
 )
