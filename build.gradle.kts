@@ -15,6 +15,7 @@ repositories {
 dependencies {
     implementation("me.jakejmattson:DiscordKt:0.23.4")
     implementation("com.github.trekawek:coffee-gb:master-SNAPSHOT")
+    implementation("com.sksamuel.aedile:aedile-core:1.2.0")
 
     testImplementation(kotlin("test"))
 }

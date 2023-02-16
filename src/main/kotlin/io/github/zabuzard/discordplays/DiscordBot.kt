@@ -1,12 +1,19 @@
 package io.github.zabuzard.discordplays
 
+import com.sksamuel.aedile.core.caffeineBuilder
+import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.edit
+import dev.kord.core.behavior.interaction.respondEphemeral
+import dev.kord.core.entity.interaction.ComponentInteraction
+import dev.kord.x.emoji.DiscordEmoji
 import dev.kord.x.emoji.Emojis
 import eu.rekawek.coffeegb.controller.ButtonListener
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import me.jakejmattson.discordkt.dsl.MenuButtonRowBuilder
 import me.jakejmattson.discordkt.extensions.createMenu
 import java.awt.Color
 import java.awt.image.BufferedImage
@@ -14,7 +21,9 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 import javax.imageio.stream.MemoryCacheImageOutputStream
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.commands("game") {
     slash("game-start", "Start a new game") {
@@ -33,35 +42,19 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                 page { description = "controls" }
 
                 buttons {
-                    button(null, Emojis.a) {
-                        gameService.clickButton(ButtonListener.Button.A)
-                    }
-                    button(null, Emojis.arrowUp) {
-                        gameService.clickButton(ButtonListener.Button.UP)
-                    }
-                    button(null, Emojis.b) {
-                        gameService.clickButton(ButtonListener.Button.B)
-                    }
+                    controlButton(Emojis.a, ButtonListener.Button.A, gameService)
+                    controlButton(Emojis.arrowUp, ButtonListener.Button.UP, gameService)
+                    controlButton(Emojis.b, ButtonListener.Button.B, gameService)
                 }
                 buttons {
-                    button(null, Emojis.arrowLeft) {
-                        gameService.clickButton(ButtonListener.Button.LEFT)
-                    }
+                    controlButton(Emojis.arrowLeft, ButtonListener.Button.LEFT, gameService)
                     button("‎", null, disabled = true) {}
-                    button(null, Emojis.arrowRight) {
-                        gameService.clickButton(ButtonListener.Button.RIGHT)
-                    }
+                    controlButton(Emojis.arrowRight, ButtonListener.Button.RIGHT, gameService)
                 }
                 buttons {
-                    button(null, Emojis.heavyPlusSign) {
-                        gameService.clickButton(ButtonListener.Button.START)
-                    }
-                    button(null, Emojis.arrowDown) {
-                        gameService.clickButton(ButtonListener.Button.DOWN)
-                    }
-                    button(null, Emojis.heavyMinusSign) {
-                        gameService.clickButton(ButtonListener.Button.SELECT)
-                    }
+                    controlButton(Emojis.heavyPlusSign, ButtonListener.Button.START, gameService)
+                    controlButton(Emojis.arrowDown, ButtonListener.Button.DOWN, gameService)
+                    controlButton(Emojis.heavyMinusSign, ButtonListener.Button.SELECT, gameService)
                 }
             }
 
@@ -101,6 +94,37 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
         }
     }
 }
+
+private fun MenuButtonRowBuilder.controlButton(
+    emoji: DiscordEmoji,
+    button: ButtonListener.Button,
+    gameService: GameService
+) {
+    actionButton(null, emoji) {
+        val lastInput = userInputCache.getIfPresent(user.id)
+
+        val now = Clock.System.now()
+        val timeSinceLastInput = if (lastInput == null) userInputRateLimit else now - lastInput
+        when {
+            timeSinceLastInput >= userInputRateLimit -> {
+                gameService.clickButton(button)
+                deferEphemeralMessageUpdate()
+                userInputCache.put(user.id, now)
+            }
+
+            else -> respondEphemeral {
+                val timeUntilInputAllowed = userInputRateLimit - timeSinceLastInput
+                content = "You click too fast, please wait $timeUntilInputAllowed"
+            }
+        }
+    }
+}
+
+private val userInputCache = caffeineBuilder<Snowflake, Instant> {
+    maximumSize = 1_000
+    expireAfterWrite = (10).seconds
+}.build()
+private val userInputRateLimit = (2).seconds
 
 private val imageBuffer = mutableListOf<BufferedImage>()
 private const val FLUSH_IMAGE_BUFFER_AT_SIZE = 30
