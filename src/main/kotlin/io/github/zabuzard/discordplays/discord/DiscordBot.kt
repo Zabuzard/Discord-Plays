@@ -1,4 +1,4 @@
-package io.github.zabuzard.discordplays
+package io.github.zabuzard.discordplays.discord
 
 import com.sksamuel.aedile.core.caffeineBuilder
 import dev.kord.common.entity.Snowflake
@@ -8,6 +8,7 @@ import dev.kord.core.behavior.interaction.respondEphemeral
 import dev.kord.x.emoji.DiscordEmoji
 import dev.kord.x.emoji.Emojis
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
+import io.github.zabuzard.discordplays.discord.util.GifSequenceWriter
 import io.github.zabuzard.discordplays.emulation.Emulator
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -35,7 +36,7 @@ fun commands(emulator: Emulator) = me.jakejmattson.discordkt.commands.commands("
 
             emulator.start()
             discord.kord.editPresence {
-                playing(emulator.title)
+                playing("Foo game")
                 since = Clock.System.now()
             }
 
@@ -200,8 +201,8 @@ private val gifFrameReplayRefreshRate = (220).milliseconds
 private const val INPUT_OVERLAY_WIDTH = 170
 private const val SCALE = 4.0 // 0.28
 private val image = BufferedImage(
-    (ImageDisplay.RESOLUTION_WIDTH * SCALE).toInt() + INPUT_OVERLAY_WIDTH,
-    (ImageDisplay.RESOLUTION_HEIGHT * SCALE).toInt(),
+    (Emulator.RESOLUTION_WIDTH * SCALE).toInt() + INPUT_OVERLAY_WIDTH,
+    (Emulator.RESOLUTION_HEIGHT * SCALE).toInt(),
     BufferedImage.TYPE_INT_RGB
 )
 

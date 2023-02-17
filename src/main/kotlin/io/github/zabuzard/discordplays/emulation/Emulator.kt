@@ -7,41 +7,41 @@ import eu.rekawek.coffeegb.gui.SwingController
 import eu.rekawek.coffeegb.gui.SwingDisplay
 import eu.rekawek.coffeegb.memory.cart.Cartridge
 import eu.rekawek.coffeegb.serial.SerialEndpoint
-import io.github.zabuzard.discordplays.ClickController
 import io.github.zabuzard.discordplays.Config
-import io.github.zabuzard.discordplays.ImageDisplay
-import io.github.zabuzard.discordplays.VolumeControlSoundOutput
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.Dimension
 import java.awt.Graphics
 import java.io.File
 import java.util.*
+import java.util.concurrent.Executors
 import javax.swing.JFrame
 
 @Service
 class Emulator(
-    private val config: Config,
-    private val clickController: ClickController,
-    private val imageDisplay: ImageDisplay
+    private val config: Config
 ) {
+    private val emulationService = Executors.newSingleThreadExecutor()
+
+    private val clickController = ClickController()
+    private val graphicsDisplay = GraphicsDisplay()
+
     init {
         if (config.localOnly) {
             start()
         }
     }
 
-    private lateinit var gameboy: Gameboy
+    private var gameboy: Gameboy? = null
 
-    lateinit var title: String
-
+    @Synchronized
     fun start() {
-        val romPath = config.romPath
+        require(gameboy == null) { "Cannot start emulation, it is already running" }
 
-        val options = GameboyOptions(File(romPath), listOf(), listOf())
+        val options = GameboyOptions(File(config.romPath), emptyList(), emptyList())
         val cartridge = Cartridge(options)
         val serialEndpoint = SerialEndpoint.NULL_ENDPOINT
 
-        val display = if (config.localOnly) SwingDisplay(2) else imageDisplay
+        val display = if (config.localOnly) SwingDisplay(2) else graphicsDisplay
 
         val controller = if (config.localOnly) SwingController(Properties()) else clickController
 
@@ -64,20 +64,26 @@ class Emulator(
             Thread(swingDisplay).start()
         }
 
-        title = cartridge.title
         gameboy = Gameboy(options, cartridge, display, controller, soundOutput, serialEndpoint)
-
-        Thread(gameboy).start()
+            .also { emulationService.submit(it) }
     }
 
+    @Synchronized
     fun stop() {
-        gameboy.stop()
+        requireNotNull(gameboy) { "Cannot stop emulation, none is running" }
+
+        gameboy!!.stop()
     }
 
     suspend fun clickButton(button: ButtonListener.Button) =
         clickController.clickButton(button)
 
     fun render(g: Graphics, scale: Double = 2.0, x: Int = 0, y: Int = 0) {
-        imageDisplay.render(g, scale, x, y)
+        graphicsDisplay.render(g, scale, x, y)
+    }
+
+    companion object {
+        const val RESOLUTION_WIDTH = 160
+        const val RESOLUTION_HEIGHT = 144
     }
 }

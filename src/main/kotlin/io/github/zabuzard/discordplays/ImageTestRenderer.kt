@@ -1,5 +1,6 @@
 package io.github.zabuzard.discordplays
 
+import io.github.zabuzard.discordplays.emulation.Emulator
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.BorderLayout
 import java.awt.image.BufferedImage
@@ -11,7 +12,7 @@ import javax.swing.JLabel
 import javax.swing.WindowConstants
 
 @Service
-class ImageTestRenderer(private val imageDisplay: ImageDisplay) {
+class ImageTestRenderer(private val emulator: Emulator) {
     private val renderService = Executors.newSingleThreadScheduledExecutor()
 
     init {
@@ -21,13 +22,13 @@ class ImageTestRenderer(private val imageDisplay: ImageDisplay) {
 
     private fun render() {
         val image = BufferedImage(
-            (ImageDisplay.RESOLUTION_WIDTH * SCALE).toInt(),
-            (ImageDisplay.RESOLUTION_HEIGHT * SCALE).toInt(),
+            (Emulator.RESOLUTION_WIDTH * SCALE).toInt(),
+            (Emulator.RESOLUTION_HEIGHT * SCALE).toInt(),
             BufferedImage.TYPE_INT_RGB
         )
 
         val g = image.createGraphics()
-        imageDisplay.render(g, SCALE)
+        emulator.render(g, SCALE)
         g.dispose()
 
         display(image)

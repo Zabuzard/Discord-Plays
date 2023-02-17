@@ -1,13 +1,12 @@
-package io.github.zabuzard.discordplays
+package io.github.zabuzard.discordplays.emulation
 
 import eu.rekawek.coffeegb.controller.ButtonListener
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import eu.rekawek.coffeegb.controller.Controller
 import kotlinx.coroutines.delay
-import me.jakejmattson.discordkt.annotations.Service
+import kotlin.time.Duration.Companion.milliseconds
 
-@Service
-class ClickController : Controller {
+internal class ClickController : Controller {
     private lateinit var buttonListener: ButtonListener
 
     override fun setButtonListener(listener: ButtonListener) {
@@ -16,7 +15,9 @@ class ClickController : Controller {
 
     suspend fun clickButton(button: Button) {
         buttonListener.onButtonPress(button)
-        delay(250)
+        delay(clickDuration)
         buttonListener.onButtonRelease(button)
     }
 }
+
+private val clickDuration = (250).milliseconds

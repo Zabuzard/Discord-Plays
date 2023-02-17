@@ -1,4 +1,4 @@
-package io.github.zabuzard.discordplays
+package io.github.zabuzard.discordplays.emulation
 
 import eu.rekawek.coffeegb.gui.AudioSystemSoundOutput
 import eu.rekawek.coffeegb.sound.SoundOutput

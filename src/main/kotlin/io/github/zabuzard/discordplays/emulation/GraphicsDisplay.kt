@@ -1,8 +1,9 @@
-package io.github.zabuzard.discordplays
+package io.github.zabuzard.discordplays.emulation
 
 import eu.rekawek.coffeegb.gpu.Display
 import eu.rekawek.coffeegb.gui.SwingDisplay.translateGbcRgb
-import me.jakejmattson.discordkt.annotations.Service
+import io.github.zabuzard.discordplays.emulation.Emulator.Companion.RESOLUTION_HEIGHT
+import io.github.zabuzard.discordplays.emulation.Emulator.Companion.RESOLUTION_WIDTH
 import java.awt.Color
 import java.awt.Graphics
 import java.awt.image.BufferedImage
@@ -10,8 +11,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
-@Service
-class ImageDisplay() : Display {
+internal class GraphicsDisplay() : Display {
     private val renderService = Executors.newSingleThreadExecutor()
 
     private val flatPixelRgb = IntArray(RESOLUTION_WIDTH * RESOLUTION_HEIGHT)
@@ -29,8 +29,8 @@ class ImageDisplay() : Display {
         pixelCursor %= flatPixelRgb.size
     }
 
-    override fun putColorPixel(gbcRgb: Int) {
-        flatPixelRgb[pixelCursor++] = translateGbcRgb(gbcRgb)
+    override fun putColorPixel(gameboyColorRgb: Int) {
+        flatPixelRgb[pixelCursor++] = translateGbcRgb(gameboyColorRgb)
     }
 
     override fun requestRefresh() {
@@ -77,24 +77,19 @@ class ImageDisplay() : Display {
             g.drawRect(x, y, scaledWidth, scaledHeight)
         }
     }
-
-    companion object {
-        const val RESOLUTION_WIDTH = 160
-        const val RESOLUTION_HEIGHT = 144
-    }
 }
 
 private val colors = intArrayOf(0xe6f8da, 0x99c886, 0x437969, 0x051f2a)
 private val blankColor = Color(colors[0])
 
-fun translateGbcRgb(gbcRgb: Int): Int {
-    val r = gbcRgb shr 0 and 0x1f
-    val g = gbcRgb shr 5 and 0x1f
-    val b = gbcRgb shr 10 and 0x1f
+private fun Int.toRgbColor(): Int {
+    val r = this shr 0 and 0x1f
+    val g = this shr 5 and 0x1f
+    val b = this shr 10 and 0x1f
 
-    var result = r * 8 shl 16
-    result = result or (g * 8 shl 8)
-    result = result or (b * 8 shl 0)
-
-    return result
+    return (
+        (r * 8 shl 16)
+            or (g * 8 shl 8)
+            or (b * 8 shl 0)
+        )
 }

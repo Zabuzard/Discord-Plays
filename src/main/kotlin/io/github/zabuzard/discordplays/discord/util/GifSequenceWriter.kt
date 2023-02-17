@@ -1,4 +1,4 @@
-package io.github.zabuzard.discordplays
+package io.github.zabuzard.discordplays.discord.util
 
 import java.awt.image.RenderedImage
 import javax.imageio.IIOException
