@@ -8,7 +8,7 @@ import java.util.*
 fun main(args: Array<String>) {
     require(args.size == 1) {
         "Incorrect number of arguments. The first argument must be the bot token. " +
-                "Supplied arguments: ${args.contentToString()}"
+            "Supplied arguments: ${args.contentToString()}"
     }
 
     val token = args.first()

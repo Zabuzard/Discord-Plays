@@ -1,4 +1,4 @@
-package io.github.zabuzard.discordplays
+package io.github.zabuzard.discordplays.emulation
 
 import eu.rekawek.coffeegb.Gameboy
 import eu.rekawek.coffeegb.GameboyOptions
@@ -7,6 +7,10 @@ import eu.rekawek.coffeegb.gui.SwingController
 import eu.rekawek.coffeegb.gui.SwingDisplay
 import eu.rekawek.coffeegb.memory.cart.Cartridge
 import eu.rekawek.coffeegb.serial.SerialEndpoint
+import io.github.zabuzard.discordplays.ClickController
+import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.ImageDisplay
+import io.github.zabuzard.discordplays.VolumeControlSoundOutput
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.Dimension
 import java.awt.Graphics
@@ -15,10 +19,10 @@ import java.util.*
 import javax.swing.JFrame
 
 @Service
-class GameService(
+class Emulator(
+    private val config: Config,
     private val clickController: ClickController,
-    private val imageDisplay: ImageDisplay,
-    private val config: Config
+    private val imageDisplay: ImageDisplay
 ) {
     init {
         if (config.localOnly) {
@@ -29,7 +33,6 @@ class GameService(
     private lateinit var gameboy: Gameboy
 
     lateinit var title: String
-
 
     fun start() {
         val romPath = config.romPath

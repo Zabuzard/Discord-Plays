@@ -2,7 +2,6 @@ package io.github.zabuzard.discordplays
 
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.BorderLayout
-import java.awt.Image
 import java.awt.image.BufferedImage
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -10,7 +9,6 @@ import javax.swing.ImageIcon
 import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.WindowConstants
-
 
 @Service
 class ImageTestRenderer(private val imageDisplay: ImageDisplay) {

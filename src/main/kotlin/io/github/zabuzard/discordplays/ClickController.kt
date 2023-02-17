@@ -7,7 +7,7 @@ import kotlinx.coroutines.delay
 import me.jakejmattson.discordkt.annotations.Service
 
 @Service
-class ClickController: Controller {
+class ClickController : Controller {
     private lateinit var buttonListener: ButtonListener
 
     override fun setButtonListener(listener: ButtonListener) {

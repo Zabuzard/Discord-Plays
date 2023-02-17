@@ -7,8 +7,8 @@ import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.interaction.respondEphemeral
 import dev.kord.x.emoji.DiscordEmoji
 import dev.kord.x.emoji.Emojis
-import eu.rekawek.coffeegb.controller.ButtonListener
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
+import io.github.zabuzard.discordplays.emulation.Emulator
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -28,14 +28,14 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.commands("game") {
+fun commands(emulator: Emulator) = me.jakejmattson.discordkt.commands.commands("game") {
     slash("game-start", "Start a new game") {
         execute {
             respond("Starting a game")
 
-            gameService.start()
+            emulator.start()
             discord.kord.editPresence {
-                playing(gameService.title)
+                playing(emulator.title)
                 since = Clock.System.now()
             }
 
@@ -47,26 +47,26 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                 page { this.description = "Click to play!" }
 
                 buttons {
-                    controlButton(Emojis.a, Button.A, gameService)
-                    controlButton(Emojis.arrowUp, Button.UP, gameService)
-                    controlButton(Emojis.b, Button.B, gameService)
+                    controlButton(Emojis.a, Button.A, emulator)
+                    controlButton(Emojis.arrowUp, Button.UP, emulator)
+                    controlButton(Emojis.b, Button.B, emulator)
                 }
                 buttons {
-                    controlButton(Emojis.arrowLeft, Button.LEFT, gameService)
+                    controlButton(Emojis.arrowLeft, Button.LEFT, emulator)
                     button("‎", null, disabled = true) {}
-                    controlButton(Emojis.arrowRight, Button.RIGHT, gameService)
+                    controlButton(Emojis.arrowRight, Button.RIGHT, emulator)
                 }
                 buttons {
-                    controlButton(Emojis.heavyPlusSign, Button.START, gameService)
-                    controlButton(Emojis.arrowDown, Button.DOWN, gameService)
-                    controlButton(Emojis.heavyMinusSign, Button.SELECT, gameService)
+                    controlButton(Emojis.heavyPlusSign, Button.START, emulator)
+                    controlButton(Emojis.arrowDown, Button.DOWN, emulator)
+                    controlButton(Emojis.heavyMinusSign, Button.SELECT, emulator)
                 }
             }
 
             coroutineScope {
                 while (isActive) {
                     val g = image.createGraphics()
-                    gameService.render(g, SCALE)
+                    emulator.render(g, SCALE)
                     synchronized(lock) {
                         renderOverlay(g)
                     }
@@ -80,7 +80,7 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
                         displayMessage.edit {
                             files?.clear()
                             addFile("image.gif", gif.toInputStream())
-                            //content = "```\n${image.toAscii()}\n```"
+                            // content = "```\n${image.toAscii()}\n```"
                         }
 
                         imageBuffer.clear()
@@ -94,9 +94,8 @@ fun commands(gameService: GameService) = me.jakejmattson.discordkt.commands.comm
 
     slash("game-stop", "Quitting game") {
         execute {
-
             respondPublic("Quitting game")
-            gameService.stop()
+            emulator.stop()
 
             discord.kord.editPresence {}
         }
@@ -143,7 +142,7 @@ private fun renderOverlay(g: Graphics2D) {
 private fun MenuButtonRowBuilder.controlButton(
     emoji: DiscordEmoji,
     button: Button,
-    gameService: GameService
+    emulator: Emulator
 ) {
     actionButton(null, emoji) {
         val lastInput = userInputCache.getIfPresent(user.id)
@@ -152,7 +151,7 @@ private fun MenuButtonRowBuilder.controlButton(
         val timeSinceLastInput = if (lastInput == null) userInputRateLimit else now - lastInput
         when {
             timeSinceLastInput >= userInputRateLimit -> {
-                gameService.clickButton(button)
+                emulator.clickButton(button)
                 deferEphemeralMessageUpdate()
 
                 userInputCache.put(user.id, now)
@@ -199,7 +198,7 @@ private val frameCaptureRefreshRate = (150).milliseconds
 private val gifFrameReplayRefreshRate = (220).milliseconds
 
 private const val INPUT_OVERLAY_WIDTH = 170
-private const val SCALE = 4.0//0.28
+private const val SCALE = 4.0 // 0.28
 private val image = BufferedImage(
     (ImageDisplay.RESOLUTION_WIDTH * SCALE).toInt() + INPUT_OVERLAY_WIDTH,
     (ImageDisplay.RESOLUTION_HEIGHT * SCALE).toInt(),
@@ -238,7 +237,6 @@ private fun BufferedImage.toInputStream() =
     ByteArrayOutputStream().also {
         ImageIO.write(this, "png", it)
     }.toByteArray().let(::ByteArrayInputStream)
-
 
 private fun BufferedImage.toAscii(): String {
     val result = StringBuilder((this.width + 1) * this.height)

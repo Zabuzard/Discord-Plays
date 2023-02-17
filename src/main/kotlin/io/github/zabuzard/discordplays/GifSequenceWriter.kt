@@ -1,12 +1,15 @@
 package io.github.zabuzard.discordplays
 
 import java.awt.image.RenderedImage
-import javax.imageio.*
 import javax.imageio.IIOException
+import javax.imageio.IIOImage
+import javax.imageio.ImageIO
+import javax.imageio.ImageTypeSpecifier
+import javax.imageio.ImageWriteParam
+import javax.imageio.ImageWriter
 import javax.imageio.metadata.IIOMetadata
 import javax.imageio.metadata.IIOMetadataNode
 import javax.imageio.stream.ImageOutputStream
-
 
 //
 //  GifSequenceWriter.java
