@@ -42,4 +42,6 @@ bin/
 ### Mac OS ###
 .DS_Store
 
+### Custom ###
 config.json
+ext/

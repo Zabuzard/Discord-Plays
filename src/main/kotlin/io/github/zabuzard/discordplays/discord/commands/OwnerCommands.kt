@@ -17,7 +17,7 @@ fun ownerCommands(
                 since = Clock.System.now()
             }
 
-            respond("Game emulation started. Stream is ready, use /stream to host it.")
+            respond("Game emulation started. Stream is ready, use `/host stream` to host it.")
         }
     }
 
