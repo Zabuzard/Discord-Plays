@@ -6,5 +6,6 @@ import me.jakejmattson.discordkt.dsl.Data
 @Serializable
 data class Config(
     var romPath: String = "Pokemon Red TPP.gb",
-    var localOnly: Boolean = false
+    var localOnly: Boolean = false,
+    var gameTitle: String = "Pokemon Red"
 ) : Data()

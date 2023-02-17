@@ -1,6 +1,8 @@
 package io.github.zabuzard.discordplays.discord.util
 
+import java.awt.image.BufferedImage
 import java.awt.image.RenderedImage
+import java.io.ByteArrayOutputStream
 import javax.imageio.IIOException
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
@@ -10,6 +12,8 @@ import javax.imageio.ImageWriter
 import javax.imageio.metadata.IIOMetadata
 import javax.imageio.metadata.IIOMetadataNode
 import javax.imageio.stream.ImageOutputStream
+import javax.imageio.stream.MemoryCacheImageOutputStream
+import kotlin.time.Duration
 
 //
 //  GifSequenceWriter.java
@@ -136,3 +140,20 @@ class GifSequenceWriter(
         }
     }
 }
+
+fun List<BufferedImage>.toGif(frameRate: Duration) =
+    ByteArrayOutputStream().also {
+        val stream = MemoryCacheImageOutputStream(it)
+
+        val gifSequence =
+            GifSequenceWriter(
+                stream,
+                first().type,
+                frameRate.inWholeMilliseconds.toInt()
+            )
+        forEach(gifSequence::writeToSequence)
+        gifSequence.close()
+
+        stream.close()
+        it.close()
+    }.toByteArray()

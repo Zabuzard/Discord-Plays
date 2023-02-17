@@ -4,16 +4,22 @@
 | Symbol      | Meaning                        |
 |-------------|--------------------------------|
 | [Argument]  | Argument is not required.      |
+| /Category   | This is a subcommand group.    |
+
+## /host
+| Commands | Arguments | Description                             |
+|----------|-----------|-----------------------------------------|
+| stream   |           | Starts your game stream in this channel |
+
+## /owner
+| Commands | Arguments | Description               |
+|----------|-----------|---------------------------|
+| start    |           | Starts the game emulation |
+| stop     |           | Stops the game emulation  |
 
 ## Utility
 | Commands | Arguments | Description                |
 |----------|-----------|----------------------------|
 | Help     | [Command] | Display a help menu.       |
 | info     |           | Bot info for Discord Plays |
-
-## game
-| Commands   | Arguments | Description      |
-|------------|-----------|------------------|
-| game-start |           | Start a new game |
-| game-stop  |           | Quitting game    |
 

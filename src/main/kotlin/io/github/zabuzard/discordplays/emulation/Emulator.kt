@@ -73,6 +73,7 @@ class Emulator(
         requireNotNull(gameboy) { "Cannot stop emulation, none is running" }
 
         gameboy!!.stop()
+        gameboy = null
     }
 
     suspend fun clickButton(button: ButtonListener.Button) =
