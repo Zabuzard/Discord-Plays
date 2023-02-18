@@ -2,6 +2,7 @@ package io.github.zabuzard.discordplays.emulation
 
 import eu.rekawek.coffeegb.gpu.Display
 import eu.rekawek.coffeegb.gui.SwingDisplay.translateGbcRgb
+import io.github.zabuzard.discordplays.discord.util.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.emulation.Emulator.Companion.RESOLUTION_HEIGHT
 import io.github.zabuzard.discordplays.emulation.Emulator.Companion.RESOLUTION_WIDTH
 import java.awt.Color
@@ -34,7 +35,7 @@ internal class GraphicsDisplay() : Display {
     }
 
     override fun requestRefresh() {
-        renderTask = renderService.submit(this::refresh)
+        renderTask = renderService.submit(this::refresh.logAllExceptions())
     }
 
     override fun waitForRefresh() {

@@ -8,8 +8,8 @@ import me.jakejmattson.discordkt.commands.subcommand
 
 fun hostCommands(
     bot: DiscordBot
-) = subcommand("host") {
-    sub("stream", "Starts your game stream in this channel") {
+) = subcommand(HOST_COMMAND_NAME) {
+    sub(STREAM_SUBCOMMAND_NAME, "Starts your game stream in this channel") {
         execute {
             respond(
                 """
@@ -23,6 +23,9 @@ fun hostCommands(
         }
     }
 }
+
+const val HOST_COMMAND_NAME = "host"
+const val STREAM_SUBCOMMAND_NAME = "stream"
 
 private suspend fun GuildSlashCommandEvent<*>.createStreamMessage(bot: DiscordBot) {
     val streamMessage = channel.createMessage {

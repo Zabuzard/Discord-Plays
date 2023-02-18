@@ -6,10 +6,10 @@ import eu.rekawek.coffeegb.controller.ButtonListener
 import eu.rekawek.coffeegb.memory.cart.Cartridge
 import eu.rekawek.coffeegb.serial.SerialEndpoint
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.discord.util.Extensions.logAllExceptions
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.Graphics
 import java.io.File
-import java.util.*
 import java.util.concurrent.Executors
 
 @Service
@@ -35,7 +35,7 @@ class Emulator(
         muteSound()
 
         gameboy = Gameboy(options, cartridge, display, controller, soundOutput, serialEndpoint)
-            .also { emulationService.submit(it) }
+            .also { emulationService.submit(it.logAllExceptions()) }
     }
 
     @Synchronized

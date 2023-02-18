@@ -42,7 +42,7 @@ class LocalDisplay(
         frame!!.isVisible = true
 
         frame!!.addWindowListener(object : WindowAdapter() {
-            override fun windowClosed(e: WindowEvent) = deactivate()
+            override fun windowClosed(e: WindowEvent) = dispose()
         })
         frame!!.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
@@ -61,6 +61,9 @@ class LocalDisplay(
     fun deactivate() {
         require(frame != null) { "Cannot deactivate local display, is not active" }
         frame?.dispose()
+    }
+
+    private fun dispose() {
         frame = null
         label = null
 

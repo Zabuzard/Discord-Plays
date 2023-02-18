@@ -1,7 +1,9 @@
 package io.github.zabuzard.discordplays.stream
 
+import io.github.zabuzard.discordplays.discord.util.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.util.toGif
 import io.github.zabuzard.discordplays.emulation.Emulator
+import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -9,7 +11,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.image.BufferedImage
-import java.util.*
+import java.lang.Exception
 import java.util.concurrent.Executors
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.milliseconds
@@ -19,29 +21,32 @@ class StreamRenderer(
     private val emulator: Emulator,
     private val overlayRenderer: OverlayRenderer
 ) {
-    private val consumers: MutableList<StreamConsumer> =
-        Collections.synchronizedList(mutableListOf<StreamConsumer>())
+    private val consumers = mutableListOf<StreamConsumer>()
 
     private val renderService = Executors.newSingleThreadScheduledExecutor()
     private var renderJob: Job? = null
 
     private val gifBuffer = mutableListOf<BufferedImage>()
 
+    @Synchronized
     fun addStreamConsumer(consumer: StreamConsumer) {
         consumers += consumer
     }
 
+    @Synchronized
     fun removeStreamConsumer(consumer: StreamConsumer) {
         consumers -= consumer
     }
 
     suspend fun start() {
         require(renderJob == null) { "Cannot start, job is already running" }
-        renderService.submit {
-            runBlocking {
-                renderJob = launch { renderStream() }
-            }
-        }
+        renderService.submit(
+            {
+                runBlocking {
+                    renderJob = launch { renderStream() }
+                }
+            }.logAllExceptions()
+        )
     }
 
     fun stop() {
@@ -53,18 +58,26 @@ class StreamRenderer(
 
     private suspend fun renderStream() {
         while (coroutineContext.isActive) {
-            val frame = renderFrame()
-            consumers.forEach { it.acceptFrame(frame) }
+            try {
+                val frame = renderFrame()
+                synchronized(this) {
+                    consumers.forEach({ consumer: StreamConsumer -> consumer.acceptFrame(frame) }.logAllExceptions())
+                }
 
-            gifBuffer += frame
-            if (gifBuffer.size >= FLUSH_GIF_AT_FRAMES) {
-                val gif = gifBuffer.toGif(gifFrameRate)
-                consumers.forEach { it.acceptGif(gif) }
+                gifBuffer += frame
+                if (gifBuffer.size >= FLUSH_GIF_AT_FRAMES) {
+                    val gif = gifBuffer.toGif(gifFrameRate)
+                    synchronized(this) {
+                        consumers.forEach({ consumer: StreamConsumer -> consumer.acceptGif(gif) }.logAllExceptions())
+                    }
 
-                gifBuffer.clear()
+                    gifBuffer.clear()
+                }
+
+                delay(renderFrameRate)
+            } catch (e: Exception) {
+                e.printStack()
             }
-
-            delay(renderFrameRate)
         }
     }
 

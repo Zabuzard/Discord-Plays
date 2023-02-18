@@ -2,6 +2,7 @@ package io.github.zabuzard.discordplays.discord.commands
 
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
+import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.mentionCommandOrNull
 import kotlinx.datetime.Clock
 import me.jakejmattson.discordkt.arguments.BooleanArg
 import me.jakejmattson.discordkt.commands.subcommand
@@ -9,7 +10,7 @@ import me.jakejmattson.discordkt.commands.subcommand
 fun ownerCommands(
     config: Config,
     bot: DiscordBot
-) = subcommand("owner") {
+) = subcommand(OWNER_COMMAND_NAME) {
     sub("start", "Starts the game emulation") {
         execute {
             bot.startGame()
@@ -18,7 +19,11 @@ fun ownerCommands(
                 since = Clock.System.now()
             }
 
-            respond("Game emulation started. Stream is ready, use `/host stream` to host it.")
+            val streamCommand = guild.mentionCommandOrNull(
+                HOST_COMMAND_NAME,
+                "$HOST_COMMAND_NAME $STREAM_SUBCOMMAND_NAME"
+            )!!
+            respond("Game emulation started. Stream is ready, use $streamCommand to host it.")
         }
     }
 
@@ -61,3 +66,5 @@ fun ownerCommands(
         }
     }
 }
+
+const val OWNER_COMMAND_NAME = "owner"

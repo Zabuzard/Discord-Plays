@@ -1,8 +1,8 @@
 package io.github.zabuzard.discordplays
 
 import dev.kord.common.annotation.KordPreview
+import io.ktor.utils.io.printStack
 import me.jakejmattson.discordkt.dsl.bot
-import java.util.*
 
 @OptIn(KordPreview::class)
 fun main(args: Array<String>) {
@@ -22,6 +22,10 @@ fun main(args: Array<String>) {
             searchCommands = false
             dualRegistry = false
             commandReaction = null
+        }
+
+        onException {
+            exception.printStack()
         }
     }
 }
