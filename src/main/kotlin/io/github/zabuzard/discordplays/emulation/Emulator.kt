@@ -18,8 +18,9 @@ class Emulator(
 ) {
     private val emulationService = Executors.newSingleThreadExecutor()
 
-    private val clickController = ClickController()
-    private val graphicsDisplay = GraphicsDisplay()
+    private val display = GraphicsDisplay()
+    private val controller = ClickController()
+    private val soundOutput = VolumeControlSoundOutput()
 
     private var gameboy: Gameboy? = null
 
@@ -31,12 +32,7 @@ class Emulator(
         val cartridge = Cartridge(options)
         val serialEndpoint = SerialEndpoint.NULL_ENDPOINT
 
-        val display = graphicsDisplay
-
-        val controller = clickController
-
-        val soundOutput = VolumeControlSoundOutput()
-        soundOutput.mute()
+        muteSound()
 
         gameboy = Gameboy(options, cartridge, display, controller, soundOutput, serialEndpoint)
             .also { emulationService.submit(it) }
@@ -51,13 +47,16 @@ class Emulator(
     }
 
     suspend fun clickButton(button: ButtonListener.Button) =
-        clickController.clickButton(button)
+        controller.clickButton(button)
 
-    fun pressButton(button: ButtonListener.Button) = clickController.pressButton(button)
-    fun releaseButton(button: ButtonListener.Button) = clickController.releaseButton(button)
+    fun pressButton(button: ButtonListener.Button) = controller.pressButton(button)
+    fun releaseButton(button: ButtonListener.Button) = controller.releaseButton(button)
+
+    fun muteSound() = soundOutput.mute()
+    fun activateSound() = soundOutput.fullVolume()
 
     fun render(g: Graphics, scale: Double = 2.0, x: Int = 0, y: Int = 0) {
-        graphicsDisplay.render(g, scale, x, y)
+        display.render(g, scale, x, y)
     }
 
     companion object {

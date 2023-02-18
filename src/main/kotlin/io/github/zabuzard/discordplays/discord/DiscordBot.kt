@@ -92,14 +92,15 @@ class DiscordBot(
         }
     }
 
-    fun activateLocalDisplay() {
-        localDisplay.activate()
+    fun activateLocalDisplay(sound: Boolean) {
+        localDisplay.activate(sound)
         streamRenderer.addStreamConsumer(localDisplay)
     }
 
     fun deactivateLocalDisplay() {
         streamRenderer.removeStreamConsumer(localDisplay)
         localDisplay.deactivate()
+        emulator.muteSound()
     }
 
     override fun acceptFrame(frame: BufferedImage) {

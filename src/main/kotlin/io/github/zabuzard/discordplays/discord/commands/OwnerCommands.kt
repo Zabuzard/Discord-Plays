@@ -1,6 +1,5 @@
 package io.github.zabuzard.discordplays.discord.commands
 
-import dev.kord.x.emoji.Emojis.lock
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import kotlinx.datetime.Clock
@@ -43,14 +42,22 @@ fun ownerCommands(
     }
 
     sub("local-display", "Activates a local display on the bots machine for manual control.") {
-        execute(BooleanArg("activate", description = "true to activate, false to deactivate")) {
-            val activate = args.first
+        execute(
+            BooleanArg("activate", description = "true to activate, false to deactivate"),
+            BooleanArg(
+                "sound",
+                description = "true to activate sound, false to deactivate"
+            ).optional(false)
+        ) {
+            val (activate, sound) = args
+
             with(bot) {
-                if (activate) activateLocalDisplay() else deactivateLocalDisplay()
+                if (activate) activateLocalDisplay(sound) else deactivateLocalDisplay()
             }
 
-            val actionVerb = if (activate) "Activated" else "Deactivated"
-            respond("$actionVerb local display.")
+            val activateVerb = if (activate) "Activated" else "Deactivated"
+            val soundVerb = if (sound) "with" else "without"
+            respond("$activateVerb local display $soundVerb sound.")
         }
     }
 }

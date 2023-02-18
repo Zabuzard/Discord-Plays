@@ -25,7 +25,7 @@ class LocalDisplay(
     private var label: JLabel? = null
 
     @Synchronized
-    fun activate() {
+    fun activate(sound: Boolean) {
         require(frame == null) { "Cannot activate local display, is already active" }
 
         frame = JFrame()
@@ -53,6 +53,8 @@ class LocalDisplay(
                 e.toButton()?.let { emulator.releaseButton(it) }
             }
         })
+
+        if (sound) emulator.activateSound()
     }
 
     @Synchronized
@@ -61,6 +63,8 @@ class LocalDisplay(
         frame?.dispose()
         frame = null
         label = null
+
+        emulator.muteSound()
     }
 
     override fun acceptFrame(frame: BufferedImage) {
