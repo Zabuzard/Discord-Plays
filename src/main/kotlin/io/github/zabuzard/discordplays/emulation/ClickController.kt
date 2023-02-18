@@ -18,6 +18,9 @@ internal class ClickController : Controller {
         delay(clickDuration)
         buttonListener.onButtonRelease(button)
     }
+
+    fun pressButton(button: Button) = buttonListener.onButtonPress(button)
+    fun releaseButton(button: Button) = buttonListener.onButtonRelease(button)
 }
 
 private val clickDuration = (250).milliseconds

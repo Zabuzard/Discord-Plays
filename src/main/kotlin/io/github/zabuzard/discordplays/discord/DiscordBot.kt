@@ -7,6 +7,7 @@ import dev.kord.core.entity.Message
 import dev.kord.rest.request.KtorRequestException
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.emulation.Emulator
+import io.github.zabuzard.discordplays.local.LocalDisplay
 import io.github.zabuzard.discordplays.stream.OverlayRenderer
 import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
@@ -25,7 +26,8 @@ class DiscordBot(
     private val config: Config,
     private val emulator: Emulator,
     private val streamRenderer: StreamRenderer,
-    private val overlayRenderer: OverlayRenderer
+    private val overlayRenderer: OverlayRenderer,
+    private val localDisplay: LocalDisplay
 ) : StreamConsumer {
     private val targets: MutableList<Message> =
         Collections.synchronizedList(mutableListOf<Message>())
@@ -88,6 +90,16 @@ class DiscordBot(
 
             else -> UserInputResult.RATE_LIMITED
         }
+    }
+
+    fun activateLocalDisplay() {
+        localDisplay.activate()
+        streamRenderer.addStreamConsumer(localDisplay)
+    }
+
+    fun deactivateLocalDisplay() {
+        streamRenderer.removeStreamConsumer(localDisplay)
+        localDisplay.deactivate()
     }
 
     override fun acceptFrame(frame: BufferedImage) {

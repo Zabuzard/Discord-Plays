@@ -1,5 +1,6 @@
 package io.github.zabuzard.discordplays.discord.commands
 
+import dev.kord.x.emoji.Emojis.lock
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import kotlinx.datetime.Clock
@@ -38,6 +39,18 @@ fun ownerCommands(
 
             val actionVerb = if (lock) "Locked" else "Unlocked"
             respond("$actionVerb user input.")
+        }
+    }
+
+    sub("local-display", "Activates a local display on the bots machine for manual control.") {
+        execute(BooleanArg("activate", description = "true to activate, false to deactivate")) {
+            val activate = args.first
+            with(bot) {
+                if (activate) activateLocalDisplay() else deactivateLocalDisplay()
+            }
+
+            val actionVerb = if (activate) "Activated" else "Deactivated"
+            respond("$actionVerb local display.")
         }
     }
 }
