@@ -4,6 +4,7 @@ import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.mentionCommandOrNull
 import kotlinx.datetime.Clock
+import me.jakejmattson.discordkt.arguments.AnyArg
 import me.jakejmattson.discordkt.arguments.BooleanArg
 import me.jakejmattson.discordkt.commands.subcommand
 
@@ -63,6 +64,23 @@ fun ownerCommands(
             val activateVerb = if (activate) "Activated" else "Deactivated"
             val soundVerb = if (sound) "with" else "without"
             respond("$activateVerb local display $soundVerb sound.")
+        }
+    }
+
+    sub("global-message", "Attaches a global message to the stream") {
+        execute(
+            AnyArg(
+                "message",
+                "leave away to clear any existing message"
+            ).optionalNullable(null)
+        ) {
+            val message = args.first
+            with(bot) {
+                if (message == null) clearGlobalMessage() else sendGlobalMessage(message)
+            }
+
+            val actionVerb = if (message == null) "Cleared" else "Set"
+            respond("$actionVerb the global message.")
         }
     }
 }

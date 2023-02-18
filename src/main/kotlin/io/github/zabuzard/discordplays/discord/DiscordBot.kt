@@ -103,6 +103,17 @@ class DiscordBot(
         emulator.muteSound()
     }
 
+    fun sendGlobalMessage(message: String) {
+        require(message.isNotEmpty()) {
+            "Cannot send an empty global message. Use ${this::clearGlobalMessage.name} to clear it."
+        }
+        streamRenderer.globalMessage = message
+    }
+
+    fun clearGlobalMessage() {
+        streamRenderer.globalMessage = null
+    }
+
     override fun acceptFrame(frame: BufferedImage) {
         // Only interested in gifs
     }

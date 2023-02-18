@@ -3,6 +3,7 @@ package io.github.zabuzard.discordplays.stream
 import io.github.zabuzard.discordplays.discord.util.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.util.toGif
 import io.github.zabuzard.discordplays.emulation.Emulator
+import io.github.zabuzard.discordplays.stream.BannerRendering.renderBanner
 import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -11,7 +12,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.image.BufferedImage
-import java.lang.Exception
 import java.util.concurrent.Executors
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.milliseconds
@@ -27,6 +27,8 @@ class StreamRenderer(
     private var renderJob: Job? = null
 
     private val gifBuffer = mutableListOf<BufferedImage>()
+
+    var globalMessage: String? = null
 
     @Synchronized
     fun addStreamConsumer(consumer: StreamConsumer) {
@@ -89,6 +91,8 @@ class StreamRenderer(
         ).apply {
             val g = createGraphics()
             emulator.render(g, EMULATOR_SCALING_FACTOR)
+
+            globalMessage?.let { renderBanner(it, g, SCREEN_WIDTH) }
 
             g.translate(SCREEN_WIDTH, 0)
             overlayRenderer.renderOverlay(g, OVERLAY_WIDTH, OVERLAY_HEIGHT)

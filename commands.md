@@ -12,12 +12,13 @@
 | stream   |           | Starts your game stream in this channel |
 
 ## /owner
-| Commands      | Arguments         | Description                                                       |
-|---------------|-------------------|-------------------------------------------------------------------|
-| local-display | activate, [sound] | Activates a local display on the bots machine for manual control. |
-| lock-input    | lock              | Only allows user input from owners, blocks any other input        |
-| start         |                   | Starts the game emulation                                         |
-| stop          |                   | Stops the game emulation                                          |
+| Commands       | Arguments         | Description                                                       |
+|----------------|-------------------|-------------------------------------------------------------------|
+| global-message | [message]         | Attaches a global message to the stream                           |
+| local-display  | activate, [sound] | Activates a local display on the bots machine for manual control. |
+| lock-input     | lock              | Only allows user input from owners, blocks any other input        |
+| start          |                   | Starts the game emulation                                         |
+| stop           |                   | Stops the game emulation                                          |
 
 ## Utility
 | Commands | Arguments | Description                |
