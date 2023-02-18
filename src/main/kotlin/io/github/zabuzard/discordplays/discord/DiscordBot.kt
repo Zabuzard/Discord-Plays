@@ -5,6 +5,7 @@ import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.edit
 import dev.kord.core.entity.Message
 import dev.kord.rest.request.KtorRequestException
+import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.OverlayRenderer
 import io.github.zabuzard.discordplays.stream.StreamConsumer
@@ -14,7 +15,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import me.jakejmattson.discordkt.annotations.Service
-import me.jakejmattson.discordkt.extensions.DiscordRegex.user
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.util.*
@@ -22,6 +22,7 @@ import kotlin.time.Duration.Companion.seconds
 
 @Service
 class DiscordBot(
+    private val config: Config,
     private val emulator: Emulator,
     private val streamRenderer: StreamRenderer,
     private val overlayRenderer: OverlayRenderer
@@ -33,6 +34,8 @@ class DiscordBot(
         maximumSize = 1_000
         expireAfterWrite = (10).seconds
     }.build()
+
+    var userInputLockedToOwners = false
 
     init {
         streamRenderer.addStreamConsumer(this)
@@ -58,11 +61,17 @@ class DiscordBot(
 
     enum class UserInputResult {
         ACCEPTED,
-        RATE_LIMITED
+        RATE_LIMITED,
+        BLOCKED_NON_OWNER
     }
 
     suspend fun onUserInput(input: UserInput): UserInputResult {
         val userId = input.user.id
+
+        if (userInputLockedToOwners && userId.value !in config.owners) {
+            return UserInputResult.BLOCKED_NON_OWNER
+        }
+
         val lastInput = userInputCache.getIfPresent(userId)
 
         val now = Clock.System.now()

@@ -12,10 +12,11 @@
 | stream   |           | Starts your game stream in this channel |
 
 ## /owner
-| Commands | Arguments | Description               |
-|----------|-----------|---------------------------|
-| start    |           | Starts the game emulation |
-| stop     |           | Stops the game emulation  |
+| Commands   | Arguments | Description                                                |
+|------------|-----------|------------------------------------------------------------|
+| lock-input | lock      | Only allows user input from owners, blocks any other input |
+| start      |           | Starts the game emulation                                  |
+| stop       |           | Stops the game emulation                                   |
 
 ## Utility
 | Commands | Arguments | Description                |

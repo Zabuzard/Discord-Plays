@@ -54,8 +54,8 @@ class OverlayRenderer {
 private const val HISTORY_OFFSET_Y = 40
 private const val HISTORY_ENTRY_PADDING_Y = 45
 private const val HISTORY_MAX_ENTRIES = 12
-private const val BUTTON_LABEL_OFFSET_X = 15
-private const val NAME_OFFSET_X = 40
+private const val BUTTON_LABEL_OFFSET_X = 10
+private const val NAME_OFFSET_X = 35
 private const val NAME_MAX_LENGTH = 12
 
 private val historyEntryOldAfter = (10).seconds
