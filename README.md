@@ -6,7 +6,7 @@ Discord bot to play games together, inspired by Twitch Plays Pokemon
 
 ## Demo
 
-![image render](https://i.imgur.com/q8JNgfr.gif)
+![image render](https://i.imgur.com/8RQE8M5.gif)
 
 ## Tech Stack
 
