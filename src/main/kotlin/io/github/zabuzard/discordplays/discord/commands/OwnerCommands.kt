@@ -9,10 +9,10 @@ import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.requir
 import kotlinx.datetime.Clock
 import me.jakejmattson.discordkt.arguments.AnyArg
 import me.jakejmattson.discordkt.arguments.BooleanArg
+import me.jakejmattson.discordkt.arguments.ChoiceArg
 import me.jakejmattson.discordkt.arguments.UserArg
 import me.jakejmattson.discordkt.commands.subcommand
 import me.jakejmattson.discordkt.dsl.edit
-import me.jakejmattson.discordkt.extensions.fullName
 
 fun ownerCommands(
     config: Config,
@@ -106,7 +106,7 @@ fun ownerCommands(
             val user = args.first
             config.edit { owners += user.id.value }
 
-            respond("Added ${user.username} to the owners")
+            respond("Added ${user.username} to the owners.")
         }
     }
 
@@ -122,9 +122,37 @@ fun ownerCommands(
             val user = args.first
             config.edit { owners -= user.id.value }
 
-            respond("Removed ${user.username} from the owners")
+            respond("Removed ${user.username} from the owners.")
+        }
+    }
+
+    sub("game-metadata", "Change the metadata of the game played") {
+        execute(
+            ChoiceArg(
+                "entity",
+                "what to modify",
+                *GameMetadataEntity.values().map(GameMetadataEntity::name).toTypedArray()
+            ),
+            AnyArg("value", "the new value for the entity")
+        ) {
+            if (requireOwnerPermission(config)) return@execute
+
+            val (entity, value) = args
+            config.edit {
+                when (GameMetadataEntity.valueOf(entity)) {
+                    GameMetadataEntity.ROM_PATH -> romPath = value
+                    GameMetadataEntity.TITLE -> gameTitle = value
+                }
+            }
+
+            respond("Changed $entity to $value")
         }
     }
 }
 
 const val OWNER_COMMAND_NAME = "owner"
+
+private enum class GameMetadataEntity {
+    ROM_PATH,
+    TITLE
+}
