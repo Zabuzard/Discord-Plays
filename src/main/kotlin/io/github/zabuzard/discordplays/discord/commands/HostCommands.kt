@@ -32,7 +32,8 @@ fun hostCommands(
             val streamMessage = createInputMenu(bot)
 
             streamMessage.edit {
-                addFile("stream.png", javaClass.getResourceAsStream("/starting_soon.png")!!)
+                val coverImage = if (bot.gameCurrentlyRunning) "/starting_soon.png" else "/currently_offline.png"
+                addFile("stream.png", javaClass.getResourceAsStream(coverImage)!!)
                 clearEmbeds()
             }
 

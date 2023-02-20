@@ -132,6 +132,20 @@ fun ownerCommands(
             respond("Changed $entity to $value")
         }
     }
+
+    sub("ban", "Bans an user from the event, their input will be blocked") {
+        execute(UserArg("user", "who you want to ban")) {
+            if (requireOwnerPermission(config)) return@execute
+
+            val userId = args.first.id.value
+            if (userId in config.owners) {
+                respond("Cannot ban an owner of the event.")
+            }
+
+            config.edit { bannedUsers += userId }
+            respond("Banned the user from the event.")
+        }
+    }
 }
 
 const val OWNER_COMMAND_NAME = "owner"

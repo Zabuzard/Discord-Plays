@@ -51,6 +51,13 @@ object InputMenu {
                     content =
                         "User input is currently locked. The game is controlled only by the owners."
                 }
+
+                DiscordBot.UserInputResult.USER_BANNED -> respondEphemeral {
+                    content = """
+                        Sorry, you have been banned from the event. The game is not accepting your input anymore.
+                        Please get in contact with an owner or host of the event.
+                    """.trimIndent()
+                }
             }
         }
     }

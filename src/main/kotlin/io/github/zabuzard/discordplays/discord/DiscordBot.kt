@@ -42,6 +42,7 @@ class DiscordBot(
     }.build()
 
     var userInputLockedToOwners = false
+    var gameCurrentlyRunning = false
 
     init {
         streamRenderer.addStreamConsumer(this)
@@ -52,12 +53,14 @@ class DiscordBot(
         emulator.start()
         streamRenderer.start()
         statistics.onGameStarted()
+        gameCurrentlyRunning = true
     }
 
     fun stopGame() {
         emulator.stop()
         streamRenderer.stop()
         statistics.onGameStopped()
+        gameCurrentlyRunning = false
     }
 
     fun addHost(host: Host) {
@@ -71,7 +74,8 @@ class DiscordBot(
     enum class UserInputResult {
         ACCEPTED,
         RATE_LIMITED,
-        BLOCKED_NON_OWNER
+        BLOCKED_NON_OWNER,
+        USER_BANNED
     }
 
     suspend fun onUserInput(input: UserInput): UserInputResult {
@@ -79,6 +83,10 @@ class DiscordBot(
 
         if (userInputLockedToOwners && userId.value !in config.owners) {
             return UserInputResult.BLOCKED_NON_OWNER
+        }
+
+        if (userId.value in config.bannedUsers) {
+            return UserInputResult.USER_BANNED
         }
 
         val lastInput = userInputCache.getIfPresent(userId)

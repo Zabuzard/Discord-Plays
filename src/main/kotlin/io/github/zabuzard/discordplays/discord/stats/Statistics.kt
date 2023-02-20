@@ -1,6 +1,7 @@
 package io.github.zabuzard.discordplays.discord.stats
 
 import dev.kord.core.entity.User
+import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.UserInput
 import kotlinx.datetime.Clock
@@ -10,7 +11,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 @Service
-class Statistics {
+class Statistics(private val config: Config) {
     private val consumers = mutableListOf<StatisticsConsumer>()
     private val statsService = Executors.newSingleThreadScheduledExecutor()
 
@@ -60,7 +61,9 @@ class Statistics {
         val runningSince = if (gameStartedAt != null) Clock.System.now() - gameStartedAt!! else null
 
         val uniqueUserCount = userToInputCount.size
-        val userToInputSorted = userToInputCount.toList().sortedByDescending { it.second }
+        val userToInputSorted =
+            userToInputCount.filterNot { (user, _) -> user.id.value in config.bannedUsers }
+                .toList().sortedByDescending { it.second }
 
         val topUserOverview = userToInputSorted.take(20).joinToString("\n") { (user, inputCount) ->
             "* ${user.username} - $inputCount"

@@ -16,6 +16,7 @@
 | Commands       | Arguments         | Description                                                       |
 |----------------|-------------------|-------------------------------------------------------------------|
 | add-owner      | user              | Give another user owner-permission                                |
+| ban            | user              | Bans an user from the event, their input will be blocked          |
 | game-metadata  | entity, value     | Change the metadata of the game played                            |
 | global-message | [message]         | Attaches a global message to the stream                           |
 | local-display  | activate, [sound] | Activates a local display on the bots machine for manual control. |
