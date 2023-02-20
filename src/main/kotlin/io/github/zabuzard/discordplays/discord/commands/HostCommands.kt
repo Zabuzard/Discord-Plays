@@ -1,5 +1,7 @@
 package io.github.zabuzard.discordplays.discord.commands
 
+import dev.kord.common.entity.Permission.ModerateMembers
+import dev.kord.common.entity.Permissions
 import dev.kord.core.behavior.channel.createMessage
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.commands.InputMenu.createInputMenu
@@ -8,7 +10,7 @@ import me.jakejmattson.discordkt.commands.subcommand
 
 fun hostCommands(
     bot: DiscordBot
-) = subcommand(HOST_COMMAND_NAME) {
+) = subcommand(HOST_COMMAND_NAME, Permissions(ModerateMembers)) {
     sub(STREAM_SUBCOMMAND_NAME, "Starts your game stream in this channel") {
         execute {
             respond(

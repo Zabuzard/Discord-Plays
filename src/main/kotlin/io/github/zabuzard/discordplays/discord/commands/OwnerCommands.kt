@@ -1,19 +1,27 @@
 package io.github.zabuzard.discordplays.discord.commands
 
+import dev.kord.common.entity.Permission.Administrator
+import dev.kord.common.entity.Permissions
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.mentionCommandOrNull
+import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.requireOwnerPermission
 import kotlinx.datetime.Clock
 import me.jakejmattson.discordkt.arguments.AnyArg
 import me.jakejmattson.discordkt.arguments.BooleanArg
+import me.jakejmattson.discordkt.arguments.UserArg
 import me.jakejmattson.discordkt.commands.subcommand
+import me.jakejmattson.discordkt.dsl.edit
+import me.jakejmattson.discordkt.extensions.fullName
 
 fun ownerCommands(
     config: Config,
     bot: DiscordBot
-) = subcommand(OWNER_COMMAND_NAME) {
+) = subcommand(OWNER_COMMAND_NAME, Permissions(Administrator)) {
     sub("start", "Starts the game emulation") {
         execute {
+            if (requireOwnerPermission(config)) return@execute
+
             bot.startGame()
             discord.kord.editPresence {
                 playing(config.gameTitle)
@@ -30,6 +38,8 @@ fun ownerCommands(
 
     sub("stop", "Stops the game emulation") {
         execute {
+            if (requireOwnerPermission(config)) return@execute
+
             bot.stopGame()
             discord.kord.editPresence {}
 
@@ -39,6 +49,8 @@ fun ownerCommands(
 
     sub("lock-input", "Only allows user input from owners, blocks any other input") {
         execute(BooleanArg("lock", description = "true to lock, false to unlock")) {
+            if (requireOwnerPermission(config)) return@execute
+
             val lock = args.first
             bot.userInputLockedToOwners = lock
 
@@ -55,8 +67,9 @@ fun ownerCommands(
                 description = "true to activate sound, false to deactivate"
             ).optional(false)
         ) {
-            val (activate, sound) = args
+            if (requireOwnerPermission(config)) return@execute
 
+            val (activate, sound) = args
             with(bot) {
                 if (activate) activateLocalDisplay(sound) else deactivateLocalDisplay()
             }
@@ -74,6 +87,8 @@ fun ownerCommands(
                 "leave away to clear any existing message"
             ).optionalNullable(null)
         ) {
+            if (requireOwnerPermission(config)) return@execute
+
             val message = args.first
             with(bot) {
                 if (message == null) clearGlobalMessage() else sendGlobalMessage(message)
@@ -81,6 +96,33 @@ fun ownerCommands(
 
             val actionVerb = if (message == null) "Cleared" else "Set"
             respond("$actionVerb the global message.")
+        }
+    }
+
+    sub("add-owner", "Give another user owner-permission") {
+        execute(UserArg("user", "who to grant owner-permission")) {
+            if (requireOwnerPermission(config)) return@execute
+
+            val user = args.first
+            config.edit { owners += user.id.value }
+
+            respond("Added ${user.username} to the owners")
+        }
+    }
+
+    sub("remove-owner", "Revokes owner-permission from an owner") {
+        execute(UserArg("user", "who to revoke owner-permission from")) {
+            if (requireOwnerPermission(config)) return@execute
+
+            if (config.owners.size <= 1) {
+                respond("Sorry, cannot remove the last owner.")
+                return@execute
+            }
+
+            val user = args.first
+            config.edit { owners -= user.id.value }
+
+            respond("Removed ${user.username} from the owners")
         }
     }
 }
