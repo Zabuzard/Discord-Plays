@@ -8,6 +8,7 @@ import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.edit
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.TextChannel
+import dev.kord.rest.builder.message.modify.embed
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.commands.InputMenu.createInputMenu
@@ -31,6 +32,8 @@ fun hostCommands(
 
             streamMessage.edit {
                 addFile("stream.png", javaClass.getResourceAsStream("/starting_soon.png")!!)
+                embed { description = "" }
+                embeds?.clear()
             }
             bot.addStreamTarget(streamMessage)
 
@@ -54,7 +57,7 @@ private suspend fun GuildSlashCommandEvent<*>.createChat(
 
     val descriptionMessage = chatThread.createMessage(
         """
-        Welcome to **Discord Plays ${config.gameTitle}** - cause the crowd is better at gaming! 🐟🎮
+        Welcome to **Discord Plays ${config.gameTitle}** - cause the crowd is just better at it! 🐟🎮
         
         Join in and help us to beat the game by simply clicking on the buttons below the stream 🙌
         Your input is forwarded immediately, the stream itself lags behind for around 10s. Sometimes input is momentarily blocked to save the game.

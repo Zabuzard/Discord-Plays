@@ -14,7 +14,7 @@ import me.jakejmattson.discordkt.extensions.createMenu
 object InputMenu {
     suspend fun GuildSlashCommandEvent<*>.createInputMenu(bot: DiscordBot) =
         channel.createMenu {
-            page { this.description = "Click to play!" }
+            page { description = "Click to play!" }
 
             buttons {
                 controlButton(Emojis.a, ButtonListener.Button.A, bot)
