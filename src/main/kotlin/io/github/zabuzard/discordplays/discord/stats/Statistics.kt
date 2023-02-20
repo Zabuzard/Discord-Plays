@@ -1,8 +1,8 @@
 package io.github.zabuzard.discordplays.discord.stats
 
 import dev.kord.core.entity.User
+import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.UserInput
-import io.github.zabuzard.discordplays.discord.util.Extensions.logAllExceptions
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import me.jakejmattson.discordkt.annotations.Service

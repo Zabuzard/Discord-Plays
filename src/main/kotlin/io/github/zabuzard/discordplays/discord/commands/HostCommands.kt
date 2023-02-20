@@ -7,7 +7,6 @@ import dev.kord.core.behavior.channel.asChannelOf
 import dev.kord.core.behavior.edit
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.TextChannel
-import dev.kord.rest.builder.message.modify.embed
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.Host

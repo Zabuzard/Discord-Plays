@@ -6,7 +6,7 @@ import eu.rekawek.coffeegb.controller.ButtonListener
 import eu.rekawek.coffeegb.memory.cart.Cartridge
 import eu.rekawek.coffeegb.serial.SerialEndpoint
 import io.github.zabuzard.discordplays.Config
-import io.github.zabuzard.discordplays.discord.util.Extensions.logAllExceptions
+import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.Graphics
 import java.io.File

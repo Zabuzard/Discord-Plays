@@ -1,10 +1,10 @@
 package io.github.zabuzard.discordplays.stream
 
-import io.github.zabuzard.discordplays.discord.util.Extensions.logAllExceptions
-import io.github.zabuzard.discordplays.discord.util.toGif
+import io.github.zabuzard.discordplays.Extensions.logAllExceptions
+import io.github.zabuzard.discordplays.discord.gif.Gif
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.BannerRendering.renderBanner
-import io.ktor.utils.io.printStack
+import io.ktor.utils.io.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -26,7 +26,7 @@ class StreamRenderer(
     private val renderService = Executors.newSingleThreadScheduledExecutor()
     private var renderJob: Job? = null
 
-    private val gifBuffer = mutableListOf<BufferedImage>()
+    private var gif: Gif = Gif(gifFrameRate)
 
     var globalMessage: String? = null
 
@@ -66,14 +66,14 @@ class StreamRenderer(
                     consumers.forEach({ consumer: StreamConsumer -> consumer.acceptFrame(frame) }.logAllExceptions())
                 }
 
-                gifBuffer += frame
-                if (gifBuffer.size >= FLUSH_GIF_AT_FRAMES) {
-                    val gif = gifBuffer.toGif(gifFrameRate)
+                gif += frame
+                if (gif.size >= FLUSH_GIF_AT_FRAMES) {
+                    val rawGif = gif.endSequence()
                     synchronized(this) {
-                        consumers.forEach({ consumer: StreamConsumer -> consumer.acceptGif(gif) }.logAllExceptions())
+                        consumers.forEach({ consumer: StreamConsumer -> consumer.acceptGif(rawGif) }.logAllExceptions())
                     }
 
-                    gifBuffer.clear()
+                    gif = Gif(gifFrameRate)
                 }
 
                 delay(renderFrameRate)

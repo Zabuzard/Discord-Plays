@@ -1,4 +1,4 @@
-package io.github.zabuzard.discordplays.discord.util
+package io.github.zabuzard.discordplays
 
 import io.ktor.utils.io.printStack
 
