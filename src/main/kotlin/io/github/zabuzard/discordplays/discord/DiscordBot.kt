@@ -21,7 +21,6 @@ import kotlinx.datetime.Instant
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
-import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
 @Service
@@ -33,8 +32,7 @@ class DiscordBot(
     private val localDisplay: LocalDisplay,
     private val statistics: Statistics
 ) : StreamConsumer, StatisticsConsumer {
-    private val hosts: MutableList<Host> =
-        Collections.synchronizedList(mutableListOf<Host>())
+    private var hosts = emptyList<Host>()
 
     private val userInputCache = caffeineBuilder<Snowflake, Instant> {
         maximumSize = 1_000
@@ -155,20 +153,18 @@ class DiscordBot(
 
     override fun acceptGif(gif: ByteArray) {
         runBlocking {
-            synchronized(hosts) {
-                hosts.forEach {
-                    launch {
-                        try {
-                            it.streamMessage.edit {
-                                files?.clear()
-                                addFile("image.gif", gif.toInputStream())
-                            }
-                        } catch (e: KtorRequestException) {
-                            if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
-                                removeHost(it)
-                            } else {
-                                throw e
-                            }
+            hosts.forEach {
+                launch {
+                    try {
+                        it.streamMessage.edit {
+                            files?.clear()
+                            addFile("image.gif", gif.toInputStream())
+                        }
+                    } catch (e: KtorRequestException) {
+                        if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
+                            removeHost(it)
+                        } else {
+                            throw e
                         }
                     }
                 }
@@ -178,23 +174,21 @@ class DiscordBot(
 
     override fun acceptStatistics(stats: String) {
         runBlocking {
-            synchronized(hosts) {
-                hosts.forEach {
-                    launch {
-                        try {
-                            it.chatDescriptionMessage.edit {
-                                embeds?.clear()
-                                embed {
-                                    title = "Stats"
-                                    description = stats
-                                }
+            hosts.forEach {
+                launch {
+                    try {
+                        it.chatDescriptionMessage.edit {
+                            embeds?.clear()
+                            embed {
+                                title = "Stats"
+                                description = stats
                             }
-                        } catch (e: KtorRequestException) {
-                            if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
-                                removeHost(it)
-                            } else {
-                                throw e
-                            }
+                        }
+                    } catch (e: KtorRequestException) {
+                        if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
+                            removeHost(it)
+                        } else {
+                            throw e
                         }
                     }
                 }

@@ -79,7 +79,7 @@ private suspend fun GuildSlashCommandEvent<*>.createChat(
         """
         Welcome to **Discord Plays ${config.gameTitle}** - cause the crowd is just better at it! 🐟🎮
         
-        Join in and help us to beat the game by simply clicking on the buttons below the stream 🙌
+        Join in and help us to beat the game by simply clicking the buttons below the stream 🙌
         Your input is forwarded immediately, the stream itself lags behind for around 10s. Sometimes input is momentarily blocked to save the game.
         This is a cross-community event, users from other servers participate too 👌
         

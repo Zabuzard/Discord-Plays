@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 @Service
 class Statistics(private val config: Config) {
-    private val consumers = mutableListOf<StatisticsConsumer>()
+    private var consumers = emptyList<StatisticsConsumer>()
     private val statsService = Executors.newSingleThreadScheduledExecutor()
 
     private var gameStartedAt: Instant? = null
@@ -28,42 +28,42 @@ class Statistics(private val config: Config) {
         )
     }
 
-    @Synchronized
     fun addStatisticsConsumer(consumer: StatisticsConsumer) {
         consumers += consumer
     }
 
-    @Synchronized
     fun removeStatisticsConsumer(consumer: StatisticsConsumer) {
         consumers -= consumer
     }
 
-    @Synchronized
     fun onGameStarted() {
         gameStartedAt = Clock.System.now()
     }
 
-    @Synchronized
     fun onGameStopped() {
         gameStartedAt = null
-        userToInputCount.clear()
+        synchronized(userToInputCount) { userToInputCount.clear() }
         totalInputCount = 0
     }
 
-    @Synchronized
     fun onUserInput(userInput: UserInput) {
-        userToInputCount[userInput.user] = (userToInputCount[userInput.user] ?: 0) + 1
+        synchronized(userToInputCount) {
+            userToInputCount[userInput.user] = (userToInputCount[userInput.user] ?: 0) + 1
+        }
         totalInputCount++
     }
 
-    @Synchronized
     private fun computeStats() {
         val runningSince = if (gameStartedAt != null) Clock.System.now() - gameStartedAt!! else null
 
         val uniqueUserCount = userToInputCount.size
-        val userToInputSorted =
-            userToInputCount.filterNot { (user, _) -> user.id.value in config.bannedUsers }
-                .toList().sortedByDescending { it.second }
+
+        val userToInputSorted: List<Pair<User, Int>>
+        synchronized(userToInputCount) {
+            userToInputSorted =
+                userToInputCount.filterNot { (user, _) -> user.id.value in config.bannedUsers }
+                    .toList().sortedByDescending { it.second }
+        }
 
         val topUserOverview = userToInputSorted.take(20).joinToString("\n") { (user, inputCount) ->
             "* ${user.username} - $inputCount"

@@ -4,7 +4,7 @@ import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.gif.Gif
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.BannerRendering.renderBanner
-import io.ktor.utils.io.*
+import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -21,7 +21,7 @@ class StreamRenderer(
     private val emulator: Emulator,
     private val overlayRenderer: OverlayRenderer
 ) {
-    private val consumers = mutableListOf<StreamConsumer>()
+    private var consumers = emptyList<StreamConsumer>()
 
     private val renderService = Executors.newSingleThreadScheduledExecutor()
     private var renderJob: Job? = null
@@ -30,12 +30,10 @@ class StreamRenderer(
 
     var globalMessage: String? = null
 
-    @Synchronized
     fun addStreamConsumer(consumer: StreamConsumer) {
         consumers += consumer
     }
 
-    @Synchronized
     fun removeStreamConsumer(consumer: StreamConsumer) {
         consumers -= consumer
     }
@@ -62,16 +60,12 @@ class StreamRenderer(
         while (coroutineContext.isActive) {
             try {
                 val frame = renderFrame()
-                synchronized(this) {
-                    consumers.forEach({ consumer: StreamConsumer -> consumer.acceptFrame(frame) }.logAllExceptions())
-                }
+                consumers.forEach({ consumer: StreamConsumer -> consumer.acceptFrame(frame) }.logAllExceptions())
 
                 gif += frame
                 if (gif.size >= FLUSH_GIF_AT_FRAMES) {
                     val rawGif = gif.endSequence()
-                    synchronized(this) {
-                        consumers.forEach({ consumer: StreamConsumer -> consumer.acceptGif(rawGif) }.logAllExceptions())
-                    }
+                    consumers.forEach({ consumer: StreamConsumer -> consumer.acceptGif(rawGif) }.logAllExceptions())
 
                     gif = Gif(gifFrameRate)
                 }
