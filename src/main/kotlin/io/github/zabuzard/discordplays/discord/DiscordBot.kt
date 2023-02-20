@@ -6,6 +6,7 @@ import dev.kord.core.behavior.edit
 import dev.kord.rest.builder.message.modify.embed
 import dev.kord.rest.request.KtorRequestException
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.clearEmbeds
 import io.github.zabuzard.discordplays.discord.stats.Statistics
 import io.github.zabuzard.discordplays.discord.stats.StatisticsConsumer
 import io.github.zabuzard.discordplays.emulation.Emulator
@@ -110,15 +111,34 @@ class DiscordBot(
         emulator.muteSound()
     }
 
-    fun sendGlobalMessage(message: String) {
-        require(message.isNotEmpty()) {
-            "Cannot send an empty global message. Use ${this::clearGlobalMessage.name} to clear it."
+    fun setGlobalMessage(message: String?) {
+        if (message == null) {
+            streamRenderer.globalMessage = null
+        } else {
+            require(message.isNotEmpty()) {
+                "Cannot send an empty global message."
+            }
+            streamRenderer.globalMessage = message
         }
-        streamRenderer.globalMessage = message
     }
 
-    fun clearGlobalMessage() {
-        streamRenderer.globalMessage = null
+    suspend fun setCommunityMessage(channelId: Snowflake, message: String?) {
+        if (message != null) {
+            require(message.isNotEmpty()) {
+                "Cannot send an empty community message."
+            }
+        }
+
+        val host = hosts.find { it.streamMessage.channelId == channelId }
+        requireNotNull(host) { "Could not find any stream hosted in this channel." }
+
+        host.streamMessage.edit {
+            clearEmbeds()
+
+            if (message != null) {
+                embed { description = message }
+            }
+        }
     }
 
     override fun acceptFrame(frame: BufferedImage) {

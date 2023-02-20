@@ -11,7 +11,9 @@ import dev.kord.rest.builder.message.modify.embed
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.Host
+import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.clearEmbeds
 import io.github.zabuzard.discordplays.discord.commands.InputMenu.createInputMenu
+import me.jakejmattson.discordkt.arguments.AnyArg
 import me.jakejmattson.discordkt.commands.GuildSlashCommandEvent
 import me.jakejmattson.discordkt.commands.subcommand
 
@@ -32,13 +34,32 @@ fun hostCommands(
 
             streamMessage.edit {
                 addFile("stream.png", javaClass.getResourceAsStream("/starting_soon.png")!!)
-                embed { description = "" }
-                embeds?.clear()
+                clearEmbeds()
             }
 
             val chatDescriptionMessage = createChat(streamMessage, config)
 
             bot.addHost(Host(streamMessage, chatDescriptionMessage))
+        }
+    }
+
+    sub(
+        "community-message",
+        "Attaches a community-wide message to the stream hosted in this channel"
+    ) {
+        execute(
+            AnyArg(
+                "message",
+                "leave out to clear any existing message"
+            ).optionalNullable(null)
+        ) {
+            val message = args.first
+            with(bot) {
+                setCommunityMessage(channel.id, message)
+            }
+
+            val actionVerb = if (message == null) "Cleared" else "Set"
+            respond("$actionVerb the community message.")
         }
     }
 }

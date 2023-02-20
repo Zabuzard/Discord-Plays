@@ -84,14 +84,14 @@ fun ownerCommands(
         execute(
             AnyArg(
                 "message",
-                "leave away to clear any existing message"
+                "leave out to clear any existing message"
             ).optionalNullable(null)
         ) {
             if (requireOwnerPermission(config)) return@execute
 
             val message = args.first
             with(bot) {
-                if (message == null) clearGlobalMessage() else sendGlobalMessage(message)
+                setGlobalMessage(message)
             }
 
             val actionVerb = if (message == null) "Cleared" else "Set"

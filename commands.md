@@ -7,9 +7,10 @@
 | /Category   | This is a subcommand group.    |
 
 ## /host
-| Commands | Arguments | Description                             |
-|----------|-----------|-----------------------------------------|
-| stream   |           | Starts your game stream in this channel |
+| Commands          | Arguments | Description                                                            |
+|-------------------|-----------|------------------------------------------------------------------------|
+| community-message | [message] | Attaches a community-wide message to the stream hosted in this channel |
+| stream            |           | Starts your game stream in this channel                                |
 
 ## /owner
 | Commands       | Arguments         | Description                                                       |
