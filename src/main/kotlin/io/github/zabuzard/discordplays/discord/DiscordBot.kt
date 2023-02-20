@@ -3,9 +3,11 @@ package io.github.zabuzard.discordplays.discord
 import com.sksamuel.aedile.core.caffeineBuilder
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.edit
-import dev.kord.core.entity.Message
+import dev.kord.rest.builder.message.modify.embed
 import dev.kord.rest.request.KtorRequestException
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.discord.stats.Statistics
+import io.github.zabuzard.discordplays.discord.stats.StatisticsConsumer
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.local.LocalDisplay
 import io.github.zabuzard.discordplays.stream.OverlayRenderer
@@ -27,10 +29,11 @@ class DiscordBot(
     private val emulator: Emulator,
     private val streamRenderer: StreamRenderer,
     private val overlayRenderer: OverlayRenderer,
-    private val localDisplay: LocalDisplay
-) : StreamConsumer {
-    private val targets: MutableList<Message> =
-        Collections.synchronizedList(mutableListOf<Message>())
+    private val localDisplay: LocalDisplay,
+    private val statistics: Statistics
+) : StreamConsumer, StatisticsConsumer {
+    private val hosts: MutableList<Host> =
+        Collections.synchronizedList(mutableListOf<Host>())
 
     private val userInputCache = caffeineBuilder<Snowflake, Instant> {
         maximumSize = 1_000
@@ -41,24 +44,27 @@ class DiscordBot(
 
     init {
         streamRenderer.addStreamConsumer(this)
+        statistics.addStatisticsConsumer(this)
     }
 
     suspend fun startGame() {
         emulator.start()
         streamRenderer.start()
+        statistics.onGameStarted()
     }
 
     fun stopGame() {
         emulator.stop()
         streamRenderer.stop()
+        statistics.onGameStopped()
     }
 
-    fun addStreamTarget(target: Message) {
-        targets += target
+    fun addHost(host: Host) {
+        hosts += host
     }
 
-    fun removeStreamTarget(target: Message) {
-        targets -= target
+    private fun removeHost(host: Host) {
+        hosts -= host
     }
 
     enum class UserInputResult {
@@ -85,6 +91,7 @@ class DiscordBot(
                 emulator.clickButton(input.button)
 
                 userInputCache.put(userId, now)
+                statistics.onUserInput(input)
                 UserInputResult.ACCEPTED
             }
 
@@ -120,18 +127,46 @@ class DiscordBot(
 
     override fun acceptGif(gif: ByteArray) {
         runBlocking {
-            targets.forEach {
-                launch {
-                    try {
-                        it.edit {
-                            files?.clear()
-                            addFile("image.gif", gif.toInputStream())
+            synchronized(hosts) {
+                hosts.forEach {
+                    launch {
+                        try {
+                            it.streamMessage.edit {
+                                files?.clear()
+                                addFile("image.gif", gif.toInputStream())
+                            }
+                        } catch (e: KtorRequestException) {
+                            if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
+                                removeHost(it)
+                            } else {
+                                throw e
+                            }
                         }
-                    } catch (e: KtorRequestException) {
-                        if (e.error?.code?.name == "UnknownMessage") {
-                            removeStreamTarget(it)
-                        } else {
-                            throw e
+                    }
+                }
+            }
+        }
+    }
+
+    override fun acceptStatistics(stats: String) {
+        runBlocking {
+            synchronized(hosts) {
+                hosts.forEach {
+                    launch {
+                        try {
+                            it.chatDescriptionMessage.edit {
+                                embeds?.clear()
+                                embed {
+                                    title = "Stats"
+                                    description = stats
+                                }
+                            }
+                        } catch (e: KtorRequestException) {
+                            if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
+                                removeHost(it)
+                            } else {
+                                throw e
+                            }
                         }
                     }
                 }
@@ -141,6 +176,7 @@ class DiscordBot(
 }
 
 private val userInputRateLimit = (1.5).seconds
+private const val MESSAGE_NOT_FOUND_ERROR = "UnknownMessage"
 
 private fun ByteArray.toInputStream() =
     ByteArrayInputStream(this)

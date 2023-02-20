@@ -4,13 +4,13 @@ import dev.kord.common.entity.ArchiveDuration
 import dev.kord.common.entity.Permission.ModerateMembers
 import dev.kord.common.entity.Permissions
 import dev.kord.core.behavior.channel.asChannelOf
-import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.edit
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.TextChannel
 import dev.kord.rest.builder.message.modify.embed
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
+import io.github.zabuzard.discordplays.discord.Host
 import io.github.zabuzard.discordplays.discord.commands.InputMenu.createInputMenu
 import me.jakejmattson.discordkt.commands.GuildSlashCommandEvent
 import me.jakejmattson.discordkt.commands.subcommand
@@ -35,9 +35,10 @@ fun hostCommands(
                 embed { description = "" }
                 embeds?.clear()
             }
-            bot.addStreamTarget(streamMessage)
 
-            createChat(streamMessage, config)
+            val chatDescriptionMessage = createChat(streamMessage, config)
+
+            bot.addHost(Host(streamMessage, chatDescriptionMessage))
         }
     }
 }
@@ -48,14 +49,12 @@ const val STREAM_SUBCOMMAND_NAME = "stream"
 private suspend fun GuildSlashCommandEvent<*>.createChat(
     rootMessage: Message,
     config: Config
-) {
-    val chatThread = channel.asChannelOf<TextChannel>().startPublicThreadWithMessage(
+) =
+    channel.asChannelOf<TextChannel>().startPublicThreadWithMessage(
         rootMessage.id,
         "Discord Plays ${config.gameTitle}",
         ArchiveDuration.Week
-    )
-
-    val descriptionMessage = chatThread.createMessage(
+    ).createMessage(
         """
         Welcome to **Discord Plays ${config.gameTitle}** - cause the crowd is just better at it! 🐟🎮
         
@@ -66,4 +65,3 @@ private suspend fun GuildSlashCommandEvent<*>.createChat(
         The project is open-source at <https://github.com/Zabuzard/Discord-Plays>, feel free to come over to contribute or tell us how you like it 🤙
         """.trimIndent()
     )
-}

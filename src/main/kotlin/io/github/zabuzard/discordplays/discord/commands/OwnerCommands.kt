@@ -110,22 +110,6 @@ fun ownerCommands(
         }
     }
 
-    sub("remove-owner", "Revokes owner-permission from an owner") {
-        execute(UserArg("user", "who to revoke owner-permission from")) {
-            if (requireOwnerPermission(config)) return@execute
-
-            if (config.owners.size <= 1) {
-                respond("Sorry, cannot remove the last owner.")
-                return@execute
-            }
-
-            val user = args.first
-            config.edit { owners -= user.id.value }
-
-            respond("Removed ${user.username} from the owners.")
-        }
-    }
-
     sub("game-metadata", "Change the metadata of the game played") {
         execute(
             ChoiceArg(
