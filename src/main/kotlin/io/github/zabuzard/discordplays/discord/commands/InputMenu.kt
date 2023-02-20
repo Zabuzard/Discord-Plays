@@ -12,7 +12,7 @@ import me.jakejmattson.discordkt.dsl.MenuButtonRowBuilder
 import me.jakejmattson.discordkt.extensions.createMenu
 
 object InputMenu {
-    suspend fun GuildSlashCommandEvent<*>.createInputMenu(bot: DiscordBot) {
+    suspend fun GuildSlashCommandEvent<*>.createInputMenu(bot: DiscordBot) =
         channel.createMenu {
             page { this.description = "Click to play!" }
 
@@ -32,7 +32,6 @@ object InputMenu {
                 controlButton(Emojis.heavyMinusSign, ButtonListener.Button.SELECT, bot)
             }
         }
-    }
 
     private fun MenuButtonRowBuilder.controlButton(
         emoji: DiscordEmoji,
@@ -47,8 +46,10 @@ object InputMenu {
                 DiscordBot.UserInputResult.RATE_LIMITED -> respondEphemeral {
                     content = "You click too fast, please wait a bit."
                 }
+
                 DiscordBot.UserInputResult.BLOCKED_NON_OWNER -> respondEphemeral {
-                    content = "User input is currently locked. The game is controlled only by the owners."
+                    content =
+                        "User input is currently locked. The game is controlled only by the owners."
                 }
             }
         }
