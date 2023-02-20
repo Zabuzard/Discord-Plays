@@ -1,4 +1,4 @@
-# Discord-Plays ![emoji](https://i.imgur.com/Hs2Wohm.png)
+# Discord Plays ![emoji](https://i.imgur.com/Hs2Wohm.png)
 
 Discord bot to play games together - cause the crowd is just better at it! 🐟🎮
 
