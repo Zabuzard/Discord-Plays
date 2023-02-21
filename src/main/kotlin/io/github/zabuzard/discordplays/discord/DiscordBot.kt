@@ -24,6 +24,7 @@ import me.jakejmattson.discordkt.annotations.Service
 import me.jakejmattson.discordkt.dsl.edit
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
+import java.io.InputStream
 import kotlin.time.Duration.Companion.seconds
 
 @Service
@@ -64,6 +65,8 @@ class DiscordBot(
         streamRenderer.stop()
         statistics.onGameStopped()
         gameCurrentlyRunning = false
+
+        sendOfflineImage()
     }
 
     fun addHost(host: Host) {
@@ -160,14 +163,20 @@ class DiscordBot(
         // Only interested in gifs
     }
 
-    override fun acceptGif(gif: ByteArray) {
+    override fun acceptGif(gif: ByteArray) =
+        sendStreamFile("image.gif", gif.toInputStream())
+
+    private fun sendOfflineImage() =
+        sendStreamFile("stream.png", javaClass.getResourceAsStream(OFFLINE_COVER_RESOURCE)!!)
+
+    private fun sendStreamFile(name: String, data: InputStream) {
         runBlocking {
             guildToHost.values.forEach {
                 launch {
                     try {
                         it.streamMessage.edit {
                             files?.clear()
-                            addFile("image.gif", gif.toInputStream())
+                            addFile(name, data)
                         }
                     } catch (e: KtorRequestException) {
                         if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
@@ -212,6 +221,11 @@ class DiscordBot(
     private suspend fun loadHosts(discord: Discord) {
         guildToHost = config.hosts.mapNotNull { it.toHost(discord) }.associateBy { it.guild }
         saveHosts()
+    }
+
+    companion object {
+        const val OFFLINE_COVER_RESOURCE = "/currently_offline.png"
+        const val STARTING_SOON_COVER_RESOURCE = "/starting_soon.png"
     }
 }
 

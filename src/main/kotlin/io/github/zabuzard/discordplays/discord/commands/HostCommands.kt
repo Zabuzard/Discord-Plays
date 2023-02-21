@@ -32,7 +32,7 @@ fun hostCommands(
 
             streamMessage.edit {
                 val coverImage =
-                    if (bot.gameCurrentlyRunning) "/starting_soon.png" else "/currently_offline.png"
+                    if (bot.gameCurrentlyRunning) DiscordBot.STARTING_SOON_COVER_RESOURCE else DiscordBot.OFFLINE_COVER_RESOURCE
                 addFile("stream.png", javaClass.getResourceAsStream(coverImage)!!)
             }
 
