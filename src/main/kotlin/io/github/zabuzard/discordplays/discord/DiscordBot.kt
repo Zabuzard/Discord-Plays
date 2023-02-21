@@ -7,6 +7,8 @@ import dev.kord.core.entity.Guild
 import dev.kord.rest.builder.message.modify.embed
 import dev.kord.rest.request.KtorRequestException
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.Extensions.toInputStream
+import io.github.zabuzard.discordplays.discord.commands.AutoSaver
 import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.clearEmbeds
 import io.github.zabuzard.discordplays.discord.stats.Statistics
 import io.github.zabuzard.discordplays.discord.stats.StatisticsConsumer
@@ -23,7 +25,6 @@ import me.jakejmattson.discordkt.Discord
 import me.jakejmattson.discordkt.annotations.Service
 import me.jakejmattson.discordkt.dsl.edit
 import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
 import java.io.InputStream
 import kotlin.time.Duration.Companion.seconds
 
@@ -34,7 +35,8 @@ class DiscordBot(
     private val streamRenderer: StreamRenderer,
     private val overlayRenderer: OverlayRenderer,
     private val localDisplay: LocalDisplay,
-    private val statistics: Statistics
+    private val statistics: Statistics,
+    private val autoSaver: AutoSaver
 ) : StreamConsumer, StatisticsConsumer {
     private var guildToHost = emptyMap<Guild, Host>()
 
@@ -57,6 +59,7 @@ class DiscordBot(
         emulator.start()
         streamRenderer.start()
         statistics.onGameStarted()
+        autoSaver.start(this, emulator, discord)
         gameCurrentlyRunning = true
     }
 
@@ -65,6 +68,7 @@ class DiscordBot(
         streamRenderer.stop()
         statistics.onGameStopped()
         gameCurrentlyRunning = false
+        autoSaver.stop()
 
         sendOfflineImage()
     }
@@ -120,11 +124,9 @@ class DiscordBot(
 
     fun activateLocalDisplay(sound: Boolean) {
         localDisplay.activate(sound)
-        streamRenderer.addStreamConsumer(localDisplay)
     }
 
     fun deactivateLocalDisplay() {
-        streamRenderer.removeStreamConsumer(localDisplay)
         localDisplay.deactivate()
         emulator.muteSound()
     }
@@ -231,6 +233,3 @@ class DiscordBot(
 
 private val userInputRateLimit = (1.5).seconds
 private const val MESSAGE_NOT_FOUND_ERROR = "UnknownMessage"
-
-private fun ByteArray.toInputStream() =
-    ByteArrayInputStream(this)

@@ -6,6 +6,7 @@ import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.mentionCommandOrNull
 import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.requireOwnerPermission
+import io.github.zabuzard.discordplays.emulation.Emulator
 import kotlinx.datetime.Clock
 import me.jakejmattson.discordkt.arguments.AnyArg
 import me.jakejmattson.discordkt.arguments.BooleanArg
@@ -16,7 +17,9 @@ import me.jakejmattson.discordkt.dsl.edit
 
 fun ownerCommands(
     config: Config,
-    bot: DiscordBot
+    bot: DiscordBot,
+    emulator: Emulator,
+    autoSaver: AutoSaver
 ) = subcommand(OWNER_COMMAND_NAME, Permissions(Administrator)) {
     sub("start", "Starts the game emulation") {
         execute {
@@ -144,6 +147,21 @@ fun ownerCommands(
 
             config.edit { bannedUsers += userId }
             respond("Banned the user from the event.")
+        }
+    }
+
+    sub("save", "Starts the auto-save dialog out of its automatic schedule") {
+        execute {
+            if (requireOwnerPermission(config)) return@execute
+
+            val dmChannel = author.getDmChannelOrNull()
+            if (dmChannel == null) {
+                respond("Please open your DMs first.")
+                return@execute
+            }
+
+            respond("Triggered the auto-save routine. Check your DMs.")
+            autoSaveConversation(bot, emulator, autoSaver, author).startPrivately(discord, author)
         }
     }
 }

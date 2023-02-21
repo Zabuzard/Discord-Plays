@@ -5,6 +5,7 @@ import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.STREAM_HEIGHT
 import io.github.zabuzard.discordplays.stream.STREAM_WIDTH
 import io.github.zabuzard.discordplays.stream.StreamConsumer
+import io.github.zabuzard.discordplays.stream.StreamRenderer
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.BorderLayout
 import java.awt.event.KeyAdapter
@@ -19,6 +20,7 @@ import javax.swing.WindowConstants
 
 @Service
 class LocalDisplay(
+    private val streamRenderer: StreamRenderer,
     private val emulator: Emulator
 ) : StreamConsumer {
     private var frame: JFrame? = null
@@ -55,10 +57,14 @@ class LocalDisplay(
         })
 
         if (sound) emulator.activateSound()
+
+        streamRenderer.addStreamConsumer(this)
     }
 
     @Synchronized
     fun deactivate() {
+        streamRenderer.removeStreamConsumer(this)
+
         require(frame != null) { "Cannot deactivate local display, is not active" }
         frame?.dispose()
     }
