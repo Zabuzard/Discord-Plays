@@ -10,7 +10,6 @@ import dev.kord.core.entity.channel.TextChannel
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.Host
-import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.clearEmbeds
 import io.github.zabuzard.discordplays.discord.commands.InputMenu.createInputMenu
 import me.jakejmattson.discordkt.arguments.AnyArg
 import me.jakejmattson.discordkt.commands.GuildSlashCommandEvent
@@ -35,7 +34,6 @@ fun hostCommands(
                 val coverImage =
                     if (bot.gameCurrentlyRunning) "/starting_soon.png" else "/currently_offline.png"
                 addFile("stream.png", javaClass.getResourceAsStream(coverImage)!!)
-                clearEmbeds()
             }
 
             val chatDescriptionMessage = createChat(streamMessage, config)

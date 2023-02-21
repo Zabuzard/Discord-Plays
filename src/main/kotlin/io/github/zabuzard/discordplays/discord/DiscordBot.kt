@@ -211,6 +211,7 @@ class DiscordBot(
 
     private suspend fun loadHosts(discord: Discord) {
         guildToHost = config.hosts.mapNotNull { it.toHost(discord) }.associateBy { it.guild }
+        saveHosts()
     }
 }
 

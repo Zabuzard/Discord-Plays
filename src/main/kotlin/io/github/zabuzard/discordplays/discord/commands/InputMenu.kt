@@ -1,44 +1,64 @@
 package io.github.zabuzard.discordplays.discord.commands
 
+import dev.kord.common.entity.ButtonStyle
+import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.interaction.respondEphemeral
-import dev.kord.x.emoji.DiscordEmoji
+import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
+import dev.kord.rest.builder.component.ActionRowBuilder
+import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.x.emoji.Emojis
-import eu.rekawek.coffeegb.controller.ButtonListener
+import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.UserInput
 import kotlinx.datetime.Clock
 import me.jakejmattson.discordkt.commands.GuildSlashCommandEvent
-import me.jakejmattson.discordkt.dsl.MenuButtonRowBuilder
-import me.jakejmattson.discordkt.extensions.createMenu
+import me.jakejmattson.discordkt.dsl.listeners
+import me.jakejmattson.discordkt.extensions.button
+import me.jakejmattson.discordkt.extensions.toPartialEmoji
+import me.jakejmattson.discordkt.extensions.uuid
 
 object InputMenu {
     suspend fun GuildSlashCommandEvent<*>.createInputMenu(bot: DiscordBot) =
-        channel.createMenu {
-            page { description = "Click to play!" }
-
-            buttons {
-                controlButton(Emojis.a, ButtonListener.Button.A, bot)
-                controlButton(Emojis.arrowUp, ButtonListener.Button.UP, bot)
-                controlButton(Emojis.b, ButtonListener.Button.B, bot)
+        channel.createMessage {
+            actionRow {
+                controlButton(Button.A)
+                controlButton(Button.UP)
+                controlButton(Button.B)
             }
-            buttons {
-                controlButton(Emojis.arrowLeft, ButtonListener.Button.LEFT, bot)
-                button("‎", null, disabled = true) {}
-                controlButton(Emojis.arrowRight, ButtonListener.Button.RIGHT, bot)
+            actionRow {
+                controlButton(Button.LEFT)
+                fakeButton()
+                controlButton(Button.RIGHT)
             }
-            buttons {
-                controlButton(Emojis.heavyPlusSign, ButtonListener.Button.START, bot)
-                controlButton(Emojis.arrowDown, ButtonListener.Button.DOWN, bot)
-                controlButton(Emojis.heavyMinusSign, ButtonListener.Button.SELECT, bot)
+            actionRow {
+                controlButton(Button.START)
+                controlButton(Button.DOWN)
+                controlButton(Button.SELECT)
             }
         }
 
-    private fun MenuButtonRowBuilder.controlButton(
-        emoji: DiscordEmoji,
-        button: ButtonListener.Button,
-        bot: DiscordBot
-    ) {
-        actionButton(null, emoji) {
+    private fun ActionRowBuilder.controlButton(button: Button) {
+        val id = "$CONTROL_BUTTON_ID_PREFIX-${button.name}-${uuid()}"
+        interactionButton(ButtonStyle.Secondary, id) {
+            emoji = button.toEmoji().toPartialEmoji()
+        }
+    }
+
+    private fun ActionRowBuilder.fakeButton() =
+        button(INVISIBLE_WHITESPACE, null, disabled = true) {}
+}
+
+fun onControlButtonClicked(bot: DiscordBot) = listeners {
+    on<ButtonInteractionCreateEvent> {
+        with(interaction) {
+            val buttonId = component.data.customId.value ?: ""
+            if (!buttonId.startsWith(CONTROL_BUTTON_ID_PREFIX)) {
+                return@on
+            }
+
+            val buttonName = buttonId.split("-", limit = 3)[1]
+            val button = Button.valueOf(buttonName)
+
             val userInput = UserInput(user, button, Clock.System.now())
 
             when (bot.onUserInput(userInput)) {
@@ -62,3 +82,18 @@ object InputMenu {
         }
     }
 }
+
+private const val INVISIBLE_WHITESPACE = "‎"
+private const val CONTROL_BUTTON_ID_PREFIX = "discord_plays_input"
+
+private fun Button.toEmoji() =
+    when (this) {
+        Button.A -> Emojis.a
+        Button.B -> Emojis.b
+        Button.UP -> Emojis.arrowUp
+        Button.LEFT -> Emojis.arrowLeft
+        Button.RIGHT -> Emojis.arrowRight
+        Button.DOWN -> Emojis.arrowDown
+        Button.START -> Emojis.heavyPlusSign
+        Button.SELECT -> Emojis.heavyMinusSign
+    }
