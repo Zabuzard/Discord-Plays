@@ -22,7 +22,7 @@ fun ownerCommands(
         execute {
             if (requireOwnerPermission(config)) return@execute
 
-            bot.startGame()
+            bot.startGame(discord)
             discord.kord.editPresence {
                 playing(config.gameTitle)
                 since = Clock.System.now()
@@ -104,7 +104,7 @@ fun ownerCommands(
             if (requireOwnerPermission(config)) return@execute
 
             val user = args.first
-            config.edit { owners += user.id.value }
+            config.edit { owners += user.id }
 
             respond("Added ${user.username} to the owners.")
         }
@@ -137,7 +137,7 @@ fun ownerCommands(
         execute(UserArg("user", "who you want to ban")) {
             if (requireOwnerPermission(config)) return@execute
 
-            val userId = args.first.id.value
+            val userId = args.first.id
             if (userId in config.owners) {
                 respond("Cannot ban an owner of the event.")
             }

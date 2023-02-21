@@ -14,7 +14,7 @@ object CommandExtensions {
             ?.let { "</$fullCommandQuery:$it>" }
 
     suspend fun GuildSlashCommandEvent<*>.requireOwnerPermission(config: Config): Boolean {
-        if (author.id.value in config.owners) return false
+        if (author.id in config.owners) return false
 
         respond("Sorry, only owners can use this command.")
         return true

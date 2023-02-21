@@ -61,7 +61,7 @@ class Statistics(private val config: Config) {
         val userToInputSorted: List<Pair<User, Int>>
         synchronized(userToInputCount) {
             userToInputSorted =
-                userToInputCount.filterNot { (user, _) -> user.id.value in config.bannedUsers }
+                userToInputCount.filterNot { (user, _) -> user.id in config.bannedUsers }
                     .toList().sortedByDescending { it.second }
         }
 

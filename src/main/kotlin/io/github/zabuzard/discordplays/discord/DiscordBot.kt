@@ -3,6 +3,7 @@ package io.github.zabuzard.discordplays.discord
 import com.sksamuel.aedile.core.caffeineBuilder
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.edit
+import dev.kord.core.entity.Guild
 import dev.kord.rest.builder.message.modify.embed
 import dev.kord.rest.request.KtorRequestException
 import io.github.zabuzard.discordplays.Config
@@ -18,7 +19,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import me.jakejmattson.discordkt.Discord
 import me.jakejmattson.discordkt.annotations.Service
+import me.jakejmattson.discordkt.dsl.edit
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import kotlin.time.Duration.Companion.seconds
@@ -32,7 +35,7 @@ class DiscordBot(
     private val localDisplay: LocalDisplay,
     private val statistics: Statistics
 ) : StreamConsumer, StatisticsConsumer {
-    private var hosts = emptyList<Host>()
+    private var guildToHost = emptyMap<Guild, Host>()
 
     private val userInputCache = caffeineBuilder<Snowflake, Instant> {
         maximumSize = 1_000
@@ -47,7 +50,9 @@ class DiscordBot(
         statistics.addStatisticsConsumer(this)
     }
 
-    suspend fun startGame() {
+    suspend fun startGame(discord: Discord) {
+        loadHosts(discord)
+
         emulator.start()
         streamRenderer.start()
         statistics.onGameStarted()
@@ -62,11 +67,15 @@ class DiscordBot(
     }
 
     fun addHost(host: Host) {
-        hosts += host
+        require(guildToHost[host.guild] == null) { "Only one host per guild allowed, first delete the existing host" }
+
+        guildToHost += host.guild to host
+        saveHosts()
     }
 
     private fun removeHost(host: Host) {
-        hosts -= host
+        guildToHost -= host.guild
+        saveHosts()
     }
 
     enum class UserInputResult {
@@ -79,11 +88,11 @@ class DiscordBot(
     suspend fun onUserInput(input: UserInput): UserInputResult {
         val userId = input.user.id
 
-        if (userInputLockedToOwners && userId.value !in config.owners) {
+        if (userInputLockedToOwners && userId !in config.owners) {
             return UserInputResult.BLOCKED_NON_OWNER
         }
 
-        if (userId.value in config.bannedUsers) {
+        if (userId in config.bannedUsers) {
             return UserInputResult.USER_BANNED
         }
 
@@ -128,15 +137,15 @@ class DiscordBot(
         }
     }
 
-    suspend fun setCommunityMessage(channelId: Snowflake, message: String?) {
+    suspend fun setCommunityMessage(guild: Guild, message: String?) {
         if (message != null) {
             require(message.isNotEmpty()) {
                 "Cannot send an empty community message."
             }
         }
 
-        val host = hosts.find { it.streamMessage.channelId == channelId }
-        requireNotNull(host) { "Could not find any stream hosted in this channel." }
+        val host = guildToHost[guild]
+        requireNotNull(host) { "Could not find any stream hosted in this server." }
 
         host.streamMessage.edit {
             clearEmbeds()
@@ -153,7 +162,7 @@ class DiscordBot(
 
     override fun acceptGif(gif: ByteArray) {
         runBlocking {
-            hosts.forEach {
+            guildToHost.values.forEach {
                 launch {
                     try {
                         it.streamMessage.edit {
@@ -174,7 +183,7 @@ class DiscordBot(
 
     override fun acceptStatistics(stats: String) {
         runBlocking {
-            hosts.forEach {
+            guildToHost.values.forEach {
                 launch {
                     try {
                         it.chatDescriptionMessage.edit {
@@ -194,6 +203,14 @@ class DiscordBot(
                 }
             }
         }
+    }
+
+    private fun saveHosts() {
+        config.edit { hosts = guildToHost.values.map(Host::toHostId).toSet() }
+    }
+
+    private suspend fun loadHosts(discord: Discord) {
+        guildToHost = config.hosts.mapNotNull { it.toHost(discord) }.associateBy { it.guild }
     }
 }
 

@@ -32,14 +32,15 @@ fun hostCommands(
             val streamMessage = createInputMenu(bot)
 
             streamMessage.edit {
-                val coverImage = if (bot.gameCurrentlyRunning) "/starting_soon.png" else "/currently_offline.png"
+                val coverImage =
+                    if (bot.gameCurrentlyRunning) "/starting_soon.png" else "/currently_offline.png"
                 addFile("stream.png", javaClass.getResourceAsStream(coverImage)!!)
                 clearEmbeds()
             }
 
             val chatDescriptionMessage = createChat(streamMessage, config)
 
-            bot.addHost(Host(streamMessage, chatDescriptionMessage))
+            bot.addHost(Host(guild, streamMessage, chatDescriptionMessage))
         }
     }
 
@@ -55,7 +56,7 @@ fun hostCommands(
         ) {
             val message = args.first
             with(bot) {
-                setCommunityMessage(channel.id, message)
+                setCommunityMessage(guild, message)
             }
 
             val actionVerb = if (message == null) "Cleared" else "Set"
