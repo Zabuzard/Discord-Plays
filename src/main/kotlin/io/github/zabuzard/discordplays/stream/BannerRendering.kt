@@ -36,22 +36,3 @@ object BannerRendering {
 private const val BANNER_PADDING = 10
 private const val LINE_MAX_LENGTH = 50
 private const val MAX_LINES = 4
-
-private data class LineData(
-    val line: String,
-    val width: Int,
-    val height: Int,
-    val ascent: Int,
-    val leading: Int
-)
-
-private fun Graphics2D.lineData(line: String) =
-    fontMetrics.getLineMetrics(line, this).let {
-        LineData(
-            line,
-            fontMetrics.stringWidth(line),
-            it.height.toInt(),
-            it.ascent.toInt(),
-            it.leading.toInt()
-        )
-    }
