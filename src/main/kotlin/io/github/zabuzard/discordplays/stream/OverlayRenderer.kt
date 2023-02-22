@@ -30,7 +30,7 @@ class OverlayRenderer {
         g.color = Color.BLACK
         g.fillRect(0, 0, width, height)
 
-        val limitedHistory = history.asReversed().take(HISTORY_MAX_ENTRIES)
+        val limitedHistory = history.asReversed().take(HISTORY_MAX_ENTRIES).asReversed()
         val oldBefore = Clock.System.now() - historyEntryOldAfter
 
         g.font = Font("Arial", Font.BOLD, 20)

@@ -2,6 +2,7 @@ package io.github.zabuzard.discordplays.discord.commands
 
 import dev.kord.common.entity.Permission.Administrator
 import dev.kord.common.entity.Permissions
+import dev.kord.core.behavior.interaction.response.respond
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.mentionCommandOrNull
@@ -25,6 +26,8 @@ fun ownerCommands(
         execute {
             if (requireOwnerPermission(config)) return@execute
 
+            val hook = interaction!!.deferEphemeralResponse()
+
             bot.startGame(discord)
             discord.kord.editPresence {
                 playing(config.gameTitle)
@@ -35,7 +38,9 @@ fun ownerCommands(
                 HOST_COMMAND_NAME,
                 "$HOST_COMMAND_NAME $STREAM_SUBCOMMAND_NAME"
             )!!
-            respond("Game emulation started. Stream is ready, use $streamCommand to host it.")
+            hook.respond {
+                content = "Game emulation started. Stream is ready, use $streamCommand to host it."
+            }
         }
     }
 
