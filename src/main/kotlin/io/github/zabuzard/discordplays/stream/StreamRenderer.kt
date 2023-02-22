@@ -101,7 +101,7 @@ private val renderFrameRate = (150).milliseconds
 // smoother and does not display the last frame for a longer time
 private val gifFrameRate = (220).milliseconds
 
-private const val EMULATOR_SCALING_FACTOR = 4.0
+private const val EMULATOR_SCALING_FACTOR = 2.5
 private const val FLUSH_GIF_AT_FRAMES = 30
 
 private const val SCREEN_WIDTH = (Emulator.RESOLUTION_WIDTH * EMULATOR_SCALING_FACTOR).toInt()

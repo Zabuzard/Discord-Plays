@@ -33,7 +33,7 @@ class OverlayRenderer {
         val limitedHistory = history.asReversed().take(HISTORY_MAX_ENTRIES).asReversed()
         val oldBefore = Clock.System.now() - historyEntryOldAfter
 
-        g.font = Font("Arial", Font.BOLD, 20)
+        g.font = textFont
         limitedHistory.withIndex().forEach { (i, userInput) ->
             userInput.render(g, i, oldBefore)
         }
@@ -51,12 +51,13 @@ class OverlayRenderer {
     }
 }
 
-private const val HISTORY_OFFSET_Y = 40
-private const val HISTORY_ENTRY_PADDING_Y = 45
-private const val HISTORY_MAX_ENTRIES = 12
+private const val HISTORY_OFFSET_Y = 20
+private const val HISTORY_ENTRY_PADDING_Y = 25
+private const val HISTORY_MAX_ENTRIES = 14
 private const val BUTTON_LABEL_OFFSET_X = 10
 private const val NAME_OFFSET_X = 35
-private const val NAME_MAX_LENGTH = 12
+private const val NAME_MAX_LENGTH = 15
+private val textFont = Font("Arial", Font.BOLD, 15)
 
 private val historyEntryOldAfter = (10).seconds
 private val historyEntryExpiresAfter = (2).minutes
