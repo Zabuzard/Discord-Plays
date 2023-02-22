@@ -3,6 +3,7 @@ package io.github.zabuzard.discordplays.stream
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.gif.Gif
 import io.github.zabuzard.discordplays.emulation.Emulator
+import io.github.zabuzard.discordplays.stream.BannerRendering.Placement
 import io.github.zabuzard.discordplays.stream.BannerRendering.renderBanner
 import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Job
@@ -86,7 +87,7 @@ class StreamRenderer(
             val g = createGraphics()
             emulator.render(g, EMULATOR_SCALING_FACTOR)
 
-            globalMessage?.let { renderBanner(it, g, SCREEN_WIDTH) }
+            globalMessage?.let { renderBanner(it, g, SCREEN_WIDTH, SCREEN_HEIGHT, Placement.TOP) }
 
             g.translate(SCREEN_WIDTH, 0)
             overlayRenderer.renderOverlay(g, OVERLAY_WIDTH, OVERLAY_HEIGHT)
@@ -104,9 +105,9 @@ private val gifFrameRate = (220).milliseconds
 private const val EMULATOR_SCALING_FACTOR = 2.5
 private const val FLUSH_GIF_AT_FRAMES = 30
 
-private const val SCREEN_WIDTH = (Emulator.RESOLUTION_WIDTH * EMULATOR_SCALING_FACTOR).toInt()
-private const val SCREEN_HEIGHT = (Emulator.RESOLUTION_HEIGHT * EMULATOR_SCALING_FACTOR).toInt()
-private const val OVERLAY_WIDTH = 170
-private const val OVERLAY_HEIGHT = SCREEN_HEIGHT
+const val SCREEN_WIDTH = (Emulator.RESOLUTION_WIDTH * EMULATOR_SCALING_FACTOR).toInt()
+const val SCREEN_HEIGHT = (Emulator.RESOLUTION_HEIGHT * EMULATOR_SCALING_FACTOR).toInt()
+const val OVERLAY_WIDTH = 170
+const val OVERLAY_HEIGHT = SCREEN_HEIGHT
 const val STREAM_WIDTH = SCREEN_WIDTH + OVERLAY_WIDTH
 const val STREAM_HEIGHT = SCREEN_HEIGHT

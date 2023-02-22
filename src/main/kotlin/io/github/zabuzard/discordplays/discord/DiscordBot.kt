@@ -14,7 +14,11 @@ import io.github.zabuzard.discordplays.discord.stats.Statistics
 import io.github.zabuzard.discordplays.discord.stats.StatisticsConsumer
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.local.LocalDisplay
+import io.github.zabuzard.discordplays.stream.BannerRendering
+import io.github.zabuzard.discordplays.stream.BannerRendering.Placement
 import io.github.zabuzard.discordplays.stream.OverlayRenderer
+import io.github.zabuzard.discordplays.stream.SCREEN_HEIGHT
+import io.github.zabuzard.discordplays.stream.SCREEN_WIDTH
 import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
 import kotlinx.coroutines.launch
@@ -26,6 +30,7 @@ import me.jakejmattson.discordkt.annotations.Service
 import me.jakejmattson.discordkt.dsl.edit
 import java.awt.image.BufferedImage
 import java.io.InputStream
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 @Service
@@ -47,6 +52,10 @@ class DiscordBot(
 
     var userInputLockedToOwners = false
     var gameCurrentlyRunning = false
+
+    private var lastUserInputAt: Instant = Clock.System.now()
+    private var isPaused: Boolean = false
+    private lateinit var lastFrame: BufferedImage
 
     init {
         streamRenderer.addStreamConsumer(this)
@@ -115,6 +124,9 @@ class DiscordBot(
 
                 userInputCache.put(userId, now)
                 statistics.onUserInput(input)
+
+                isPaused = false
+                lastUserInputAt = now
                 UserInputResult.ACCEPTED
             }
 
@@ -162,11 +174,32 @@ class DiscordBot(
     }
 
     override fun acceptFrame(frame: BufferedImage) {
-        // Only interested in gifs
+        lastFrame = frame
     }
 
-    override fun acceptGif(gif: ByteArray) =
+    override fun acceptGif(gif: ByteArray) {
+        if (Clock.System.now() - lastUserInputAt > pauseAfterNoInputFor) {
+            if (!isPaused) {
+                isPaused = true
+
+                lastFrame.apply {
+                    val g = createGraphics()
+                    BannerRendering.renderBanner(
+                        PAUSED_MESSAGE,
+                        g,
+                        SCREEN_WIDTH,
+                        SCREEN_HEIGHT,
+                        Placement.CENTER
+                    )
+                }.let {
+                    sendStreamFile("stream.png", it.toInputStream())
+                }
+            }
+            return
+        }
+
         sendStreamFile("image.gif", gif.toInputStream())
+    }
 
     private fun sendOfflineImage() =
         sendStreamFile("stream.png", javaClass.getResourceAsStream(OFFLINE_COVER_RESOURCE)!!)
@@ -233,3 +266,6 @@ class DiscordBot(
 
 private val userInputRateLimit = (1.5).seconds
 private const val MESSAGE_NOT_FOUND_ERROR = "UnknownMessage"
+
+private val pauseAfterNoInputFor = (5).minutes
+private const val PAUSED_MESSAGE = "Game is paused, press any key to continue"
