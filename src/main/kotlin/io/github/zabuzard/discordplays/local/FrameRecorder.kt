@@ -71,4 +71,4 @@ class FrameRecorder(
         .max().orElse(-1) + 1
 }
 
-private const val SKIP_FRAMES = 2
+private const val SKIP_FRAMES = 1
