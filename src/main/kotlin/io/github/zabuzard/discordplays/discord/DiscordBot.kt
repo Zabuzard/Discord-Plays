@@ -67,7 +67,7 @@ class DiscordBot(
 
         emulator.start()
         streamRenderer.start()
-        statistics.onGameStarted()
+        statistics.onGameResumed()
         autoSaver.start(this, emulator, discord)
         gameCurrentlyRunning = true
     }
@@ -75,7 +75,7 @@ class DiscordBot(
     fun stopGame() {
         emulator.stop()
         streamRenderer.stop()
-        statistics.onGameStopped()
+        statistics.onGamePaused()
         gameCurrentlyRunning = false
         autoSaver.stop()
 
@@ -125,7 +125,10 @@ class DiscordBot(
                 userInputCache.put(userId, now)
                 statistics.onUserInput(input)
 
-                isPaused = false
+                if (isPaused) {
+                    isPaused = false
+                    statistics.onGameResumed()
+                }
                 lastUserInputAt = now
                 UserInputResult.ACCEPTED
             }
@@ -181,6 +184,7 @@ class DiscordBot(
         if (Clock.System.now() - lastUserInputAt > pauseAfterNoInputFor) {
             if (!isPaused) {
                 isPaused = true
+                statistics.onGamePaused()
 
                 lastFrame.apply {
                     val g = createGraphics()

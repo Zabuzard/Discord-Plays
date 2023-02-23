@@ -15,5 +15,6 @@ data class Config(
     var bannedUsers: Set<Snowflake> = setOf(),
     var hosts: Set<HostId> = setOf(),
     var autoSaveRemindAt: LocalTime = LocalTime(13, 0),
-    var userToInputCount: List<Pair<UserSnapshot, Int>> = emptyList()
+    var userToInputCount: List<Pair<UserSnapshot, Int>> = emptyList(),
+    var playtimeMs: Long = 0
 ) : Data()

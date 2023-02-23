@@ -10,13 +10,14 @@ import me.jakejmattson.discordkt.annotations.Service
 import me.jakejmattson.discordkt.dsl.edit
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 @Service
 class Statistics(private val config: Config) {
     private var consumers = emptyList<StatisticsConsumer>()
     private val statsService = Executors.newSingleThreadScheduledExecutor()
 
-    private var gameStartedAt: Instant? = null
+    private var gameActiveLastHeartbeat: Instant? = null
     private val userToInputCount: MutableMap<Snowflake, Int>
     private val userToName: MutableMap<Snowflake, String>
     private var totalInputCount: Int
@@ -43,16 +44,23 @@ class Statistics(private val config: Config) {
         consumers -= consumer
     }
 
-    fun onGameStarted() {
-        gameStartedAt = Clock.System.now()
+    fun onGameResumed() {
+        gameActiveLastHeartbeat = Clock.System.now()
     }
 
-    fun onGameStopped() {
-        gameStartedAt = null
+    fun onGamePaused() {
+        gameActiveLastHeartbeat?.let {
+            val playtimeSinceLastHeartbeat = Clock.System.now() - it
+            config.edit {
+                playtimeMs += playtimeSinceLastHeartbeat.inWholeMilliseconds
+            }
+        }
+
+        gameActiveLastHeartbeat = null
     }
 
     fun onUserInput(userInput: UserInput) {
-        synchronized(userToInputCount) {
+        synchronized(this) {
             userInput.user.id.let {
                 userToInputCount[it] = (userToInputCount[it] ?: 0) + 1
                 userToName[it] = userInput.user.username
@@ -62,12 +70,10 @@ class Statistics(private val config: Config) {
     }
 
     private fun computeStats() {
-        val runningSince = if (gameStartedAt != null) Clock.System.now() - gameStartedAt!! else null
-
         val uniqueUserCount = userToInputCount.size
 
         val userIdToInputSorted: List<Pair<Snowflake, Int>>
-        synchronized(userToInputCount) {
+        synchronized(this) {
             userIdToInputSorted =
                 userToInputCount.filterNot { (id, _) -> id in config.bannedUsers }
                     .toList().sortedByDescending { it.second }
@@ -76,15 +82,22 @@ class Statistics(private val config: Config) {
                 userToInputCount = this@Statistics.userToInputCount.mapKeys { (id, _) ->
                     UserSnapshot(id, userToName[id]!!)
                 }.toList()
+
+                gameActiveLastHeartbeat?.let {
+                    val now = Clock.System.now()
+                    val playtimeSinceLastHeartbeat = now - it
+                    gameActiveLastHeartbeat = now
+                    playtimeMs += playtimeSinceLastHeartbeat.inWholeMilliseconds
+                }
             }
         }
 
         val topUserOverview = userIdToInputSorted.take(20).joinToString("\n") { (id, inputCount) ->
-            "* ${userToName[id]} - $inputCount"
+            "    * ${userToName[id]} - $inputCount"
         }
 
         val stats = """
-            Running since $runningSince.
+            Playtime: ${config.playtimeMs.milliseconds}
             Received $totalInputCount inputs by $uniqueUserCount users.
             Top players:
             $topUserOverview
