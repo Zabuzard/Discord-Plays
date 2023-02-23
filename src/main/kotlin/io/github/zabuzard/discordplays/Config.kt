@@ -16,5 +16,6 @@ data class Config(
     var hosts: Set<HostId> = setOf(),
     var autoSaveRemindAt: LocalTime = LocalTime(13, 0),
     var userToInputCount: List<Pair<UserSnapshot, Int>> = emptyList(),
-    var playtimeMs: Long = 0
+    var playtimeMs: Long = 0,
+    var recordingPath: String = "recording"
 ) : Data()

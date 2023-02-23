@@ -4,7 +4,6 @@ import dev.kord.common.entity.ButtonStyle
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.entity.User
 import dev.kord.core.entity.channel.DmChannel
-import dev.kord.rest.builder.message.EmbedBuilder.Limits.title
 import dev.kord.x.emoji.Emojis
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import io.github.zabuzard.discordplays.Config
@@ -199,7 +198,7 @@ private suspend fun ConversationBuilder.sendFrameSnapshot(
 @Service
 class AutoSaver(
     private val config: Config,
-    private val streamRenderer: StreamRenderer
+    streamRenderer: StreamRenderer
 ) : StreamConsumer {
     private val routineService = Executors.newSingleThreadExecutor()
     private var routineJob: Job? = null

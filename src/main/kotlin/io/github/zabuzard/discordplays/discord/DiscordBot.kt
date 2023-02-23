@@ -13,6 +13,7 @@ import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.clearE
 import io.github.zabuzard.discordplays.discord.stats.Statistics
 import io.github.zabuzard.discordplays.discord.stats.StatisticsConsumer
 import io.github.zabuzard.discordplays.emulation.Emulator
+import io.github.zabuzard.discordplays.local.FrameRecorder
 import io.github.zabuzard.discordplays.local.LocalDisplay
 import io.github.zabuzard.discordplays.stream.BannerRendering
 import io.github.zabuzard.discordplays.stream.BannerRendering.Placement
@@ -41,7 +42,8 @@ class DiscordBot(
     private val overlayRenderer: OverlayRenderer,
     private val localDisplay: LocalDisplay,
     private val statistics: Statistics,
-    private val autoSaver: AutoSaver
+    private val autoSaver: AutoSaver,
+    private val frameRecorder: FrameRecorder
 ) : StreamConsumer, StatisticsConsumer {
     private var guildToHost = emptyMap<Guild, Host>()
 
@@ -69,6 +71,7 @@ class DiscordBot(
         streamRenderer.start()
         statistics.onGameResumed()
         autoSaver.start(this, emulator, discord)
+        frameRecorder.start()
         gameCurrentlyRunning = true
     }
 
@@ -78,6 +81,7 @@ class DiscordBot(
         statistics.onGamePaused()
         gameCurrentlyRunning = false
         autoSaver.stop()
+        frameRecorder.stop()
 
         sendOfflineImage()
     }
@@ -128,6 +132,7 @@ class DiscordBot(
                 if (isPaused) {
                     isPaused = false
                     statistics.onGameResumed()
+                    frameRecorder.start()
                 }
                 lastUserInputAt = now
                 UserInputResult.ACCEPTED
@@ -185,6 +190,7 @@ class DiscordBot(
             if (!isPaused) {
                 isPaused = true
                 statistics.onGamePaused()
+                frameRecorder.stop()
 
                 lastFrame.apply {
                     val g = createGraphics()
