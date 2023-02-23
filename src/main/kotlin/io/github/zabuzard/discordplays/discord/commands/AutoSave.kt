@@ -13,7 +13,6 @@ import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
-import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -34,8 +33,11 @@ import me.jakejmattson.discordkt.Discord
 import me.jakejmattson.discordkt.annotations.Service
 import me.jakejmattson.discordkt.conversations.ConversationBuilder
 import me.jakejmattson.discordkt.conversations.conversation
+import me.jakejmattson.discordkt.extensions.fullName
 import me.jakejmattson.discordkt.extensions.toPartialEmoji
+import mu.KotlinLogging
 import java.awt.image.BufferedImage
+import java.util.concurrent.CancellationException
 import java.util.concurrent.Executors
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
@@ -96,6 +98,7 @@ fun autoSaveConversation(
     endSaveRoutine(bot)
 
     dmChannel.createMessage("Thanks 👍")
+    logger.info { "${user.fullName} saved the game" }
 }
 
 private suspend fun ConversationBuilder.reminderDialog() = promptButton {
@@ -226,13 +229,18 @@ class AutoSaver(
     private suspend fun runRoutine(bot: DiscordBot, emulator: Emulator, discord: Discord) {
         while (coroutineContext.isActive) {
             try {
-                delay(Clock.System.now().untilNext(config.autoSaveRemindAt) + (1).minutes)
+                val remindIn = Clock.System.now().untilNext(config.autoSaveRemindAt) + (1).minutes
+                logger.info { "Reminding to save in: $remindIn" }
+                delay(remindIn)
 
+                logger.info { "Reminding to save" }
                 config.owners.mapNotNull { discord.kord.getUser(it) }.forEach {
                     autoSaveConversation(bot, emulator, this, it).startPrivately(discord, it)
                 }
             } catch (e: Exception) {
-                e.printStack()
+                if (e !is CancellationException) {
+                    logger.error(e) { "Unknown error" }
+                }
             }
         }
     }
@@ -245,6 +253,8 @@ class AutoSaver(
         // Only interested in frames
     }
 }
+
+private val logger = KotlinLogging.logger {}
 
 private const val NO_INPUT_LABEL = "no input"
 private const val CANCEL_LABEL = "cancel"

@@ -29,6 +29,9 @@ import kotlinx.datetime.Instant
 import me.jakejmattson.discordkt.Discord
 import me.jakejmattson.discordkt.annotations.Service
 import me.jakejmattson.discordkt.dsl.edit
+import me.jakejmattson.discordkt.extensions.fullName
+import mu.KotlinLogging
+import mu.withLoggingContext
 import java.awt.image.BufferedImage
 import java.io.InputStream
 import kotlin.time.Duration.Companion.minutes
@@ -53,7 +56,11 @@ class DiscordBot(
     }.build()
 
     var userInputLockedToOwners = false
+        set(value) {
+            field = value.also { logger.info { "User input locked to owners: $value" } }
+        }
     var gameCurrentlyRunning = false
+        private set
 
     private var lastUserInputAt: Instant = Clock.System.now()
     private var isPaused: Boolean = false
@@ -65,6 +72,7 @@ class DiscordBot(
     }
 
     suspend fun startGame(discord: Discord) {
+        logger.info { "Starting game" }
         loadHosts(discord)
 
         emulator.start()
@@ -76,6 +84,7 @@ class DiscordBot(
     }
 
     fun stopGame() {
+        logger.info { "Stopping game" }
         emulator.stop()
         streamRenderer.stop()
         statistics.onGamePaused()
@@ -89,11 +98,13 @@ class DiscordBot(
     fun addHost(host: Host) {
         require(guildToHost[host.guild] == null) { "Only one host per guild allowed, first delete the existing host" }
 
+        logger.info { "Adding host (${host.guild.name})" }
         guildToHost += host.guild to host
         saveHosts()
     }
 
     private fun removeHost(host: Host) {
+        logger.info { "Removing host (${host.guild.name})" }
         guildToHost -= host.guild
         saveHosts()
     }
@@ -107,12 +118,15 @@ class DiscordBot(
 
     suspend fun onUserInput(input: UserInput): UserInputResult {
         val userId = input.user.id
+        val userName = input.user.fullName
 
         if (userInputLockedToOwners && userId !in config.owners) {
+            logger.debug { withLoggingContext("user" to userName) { "Blocked user input ($userName), locked to owner" } }
             return UserInputResult.BLOCKED_NON_OWNER
         }
 
         if (userId in config.bannedUsers) {
+            logger.debug { withLoggingContext("user" to userName) { "Blocked user input ($userName), banned user" } }
             return UserInputResult.USER_BANNED
         }
 
@@ -123,6 +137,7 @@ class DiscordBot(
 
         return when {
             timeSinceLastInput >= userInputRateLimit -> {
+                logger.debug { withLoggingContext("user" to userName) { "$userName pressed ${input.button}" } }
                 overlayRenderer.recordUserInput(input)
                 emulator.clickButton(input.button)
 
@@ -130,6 +145,7 @@ class DiscordBot(
                 statistics.onUserInput(input)
 
                 if (isPaused) {
+                    logger.info { "Resuming paused game after inactivity" }
                     isPaused = false
                     statistics.onGameResumed()
                     frameRecorder.start()
@@ -138,26 +154,32 @@ class DiscordBot(
                 UserInputResult.ACCEPTED
             }
 
-            else -> UserInputResult.RATE_LIMITED
+            else -> UserInputResult.RATE_LIMITED.also {
+                logger.debug { withLoggingContext("user" to userName) { "Blocked user input ($userName), rate limited" } }
+            }
         }
     }
 
     fun activateLocalDisplay(sound: Boolean) {
+        logger.info { "Activating local display, sound: $sound" }
         localDisplay.activate(sound)
     }
 
     fun deactivateLocalDisplay() {
+        logger.info { "Deactivating local display" }
         localDisplay.deactivate()
         emulator.muteSound()
     }
 
     fun setGlobalMessage(message: String?) {
         if (message == null) {
+            logger.info { "Clearing global message" }
             streamRenderer.globalMessage = null
         } else {
             require(message.isNotEmpty()) {
                 "Cannot send an empty global message."
             }
+            logger.info { "Set global message: $message" }
             streamRenderer.globalMessage = message
         }
     }
@@ -172,6 +194,7 @@ class DiscordBot(
         val host = guildToHost[guild]
         requireNotNull(host) { "Could not find any stream hosted in this server." }
 
+        logger.info { "Set community message for ${host.guild.name}: $message" }
         host.streamMessage.edit {
             clearEmbeds()
 
@@ -188,6 +211,7 @@ class DiscordBot(
     override fun acceptGif(gif: ByteArray) {
         if (Clock.System.now() - lastUserInputAt > pauseAfterNoInputFor) {
             if (!isPaused) {
+                logger.info { "Pausing game due to inactivity" }
                 isPaused = true
                 statistics.onGamePaused()
                 frameRecorder.stop()
@@ -273,6 +297,8 @@ class DiscordBot(
         const val STARTING_SOON_COVER_RESOURCE = "/starting_soon.png"
     }
 }
+
+private val logger = KotlinLogging.logger {}
 
 private val userInputRateLimit = (1.5).seconds
 private const val MESSAGE_NOT_FOUND_ERROR = "UnknownMessage"

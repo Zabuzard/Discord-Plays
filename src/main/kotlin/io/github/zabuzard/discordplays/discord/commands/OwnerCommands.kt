@@ -15,6 +15,8 @@ import me.jakejmattson.discordkt.arguments.ChoiceArg
 import me.jakejmattson.discordkt.arguments.UserArg
 import me.jakejmattson.discordkt.commands.subcommand
 import me.jakejmattson.discordkt.dsl.edit
+import me.jakejmattson.discordkt.extensions.fullName
+import mu.KotlinLogging
 
 fun ownerCommands(
     config: Config,
@@ -114,7 +116,10 @@ fun ownerCommands(
             val user = args.first
             config.edit { owners += user.id }
 
-            respond("Added ${user.username} to the owners.")
+            with("Added ${user.fullName} to the owners.") {
+                logger.info { this }
+                respond(this)
+            }
         }
     }
 
@@ -137,7 +142,10 @@ fun ownerCommands(
                 }
             }
 
-            respond("Changed $entity to $value")
+            with("Changed metadata $entity to $value") {
+                logger.info { this }
+                respond(this)
+            }
         }
     }
 
@@ -145,13 +153,18 @@ fun ownerCommands(
         execute(UserArg("user", "who you want to ban")) {
             if (requireOwnerPermission(config)) return@execute
 
-            val userId = args.first.id
+            val user = args.first
+            val userId = user.id
             if (userId in config.owners) {
                 respond("Cannot ban an owner of the event.")
             }
 
             config.edit { bannedUsers += userId }
-            respond("Banned the user from the event.")
+
+            with("Banned ${user.fullName} from the event.") {
+                logger.info { this }
+                respond(this)
+            }
         }
     }
 
@@ -165,6 +178,7 @@ fun ownerCommands(
                 return@execute
             }
 
+            logger.info { "Triggered auto-save manually" }
             respond("Triggered the auto-save routine. Check your DMs.")
             autoSaveConversation(bot, emulator, autoSaver, author).startPrivately(discord, author)
         }
@@ -179,10 +193,15 @@ fun ownerCommands(
                 userToInputCount = emptyList()
             }
 
-            respond("Cleared all statistics.")
+            with("Cleared all statistics.") {
+                logger.info { this }
+                respond(this)
+            }
         }
     }
 }
+
+private val logger = KotlinLogging.logger {}
 
 const val OWNER_COMMAND_NAME = "owner"
 

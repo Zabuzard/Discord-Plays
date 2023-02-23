@@ -1,8 +1,8 @@
 package io.github.zabuzard.discordplays
 
 import dev.kord.common.annotation.KordPreview
-import io.ktor.utils.io.printStack
 import me.jakejmattson.discordkt.dsl.bot
+import mu.KotlinLogging
 
 @OptIn(KordPreview::class)
 fun main(args: Array<String>) {
@@ -25,7 +25,13 @@ fun main(args: Array<String>) {
         }
 
         onException {
-            exception.printStack()
+            logger.error(exception) { "Unknown error" }
+        }
+
+        onStart {
+            logger.info { "Bot started, ready" }
         }
     }
 }
+
+private val logger = KotlinLogging.logger {}

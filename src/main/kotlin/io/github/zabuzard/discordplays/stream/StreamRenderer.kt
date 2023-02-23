@@ -5,14 +5,15 @@ import io.github.zabuzard.discordplays.discord.gif.Gif
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.BannerRendering.Placement
 import io.github.zabuzard.discordplays.stream.BannerRendering.renderBanner
-import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import me.jakejmattson.discordkt.annotations.Service
+import mu.KotlinLogging
 import java.awt.image.BufferedImage
+import java.util.concurrent.CancellationException
 import java.util.concurrent.Executors
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.milliseconds
@@ -73,7 +74,9 @@ class StreamRenderer(
 
                 delay(renderFrameRate)
             } catch (e: Exception) {
-                e.printStack()
+                if (e !is CancellationException) {
+                    logger.error(e) { "Unknown error" }
+                }
             }
         }
     }
@@ -95,6 +98,8 @@ class StreamRenderer(
             g.dispose()
         }
 }
+
+private val logger = KotlinLogging.logger {}
 
 private val renderFrameRate = (150).milliseconds
 

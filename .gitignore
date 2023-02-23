@@ -45,3 +45,4 @@ bin/
 ### Custom ###
 config.json
 ext/
+logs/

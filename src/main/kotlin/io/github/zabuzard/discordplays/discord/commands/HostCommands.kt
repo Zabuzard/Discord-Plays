@@ -76,12 +76,12 @@ private suspend fun GuildSlashCommandEvent<*>.createChat(
         ArchiveDuration.Week
     ).createMessage(
         """
-        Welcome to **Discord Plays ${config.gameTitle}** - cause the crowd is just better at it! 🐟🎮
-        
-        Join in and help us to beat the game by simply clicking the buttons below the stream 🙌
-        Your input is forwarded immediately, the stream itself lags behind for around 10s. Sometimes input is momentarily blocked to save the game.
-        This is a cross-community event, users from other servers participate too 👌
-        
-        The project is open-source at <https://github.com/Zabuzard/Discord-Plays>, feel free to come over to contribute or tell us how you like it 🤙
-        """.trimIndent()
+        |Welcome to **Discord Plays ${config.gameTitle}** - cause the crowd is just better at it! 🐟🎮
+        |
+        |Join in and help us to beat the game by simply clicking the buttons below the stream 🙌
+        |Your input is forwarded immediately, the stream itself lags behind for around 10s. Sometimes input is momentarily blocked to save the game.
+        |This is a cross-community event, users from other servers participate too 👌
+        |
+        |The project is open-source at <https://github.com/Zabuzard/Discord-Plays>, feel free to come over to contribute or tell us how you like it 🤙
+        """.trimMargin()
     )

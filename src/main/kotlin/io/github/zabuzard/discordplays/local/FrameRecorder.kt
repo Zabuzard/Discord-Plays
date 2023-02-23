@@ -1,6 +1,5 @@
 package io.github.zabuzard.discordplays.local
 
-import dev.kord.x.emoji.Emojis.date
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.stream.StreamConsumer

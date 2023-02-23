@@ -8,6 +8,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import me.jakejmattson.discordkt.annotations.Service
 import me.jakejmattson.discordkt.dsl.edit
+import mu.KotlinLogging
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
@@ -30,25 +31,29 @@ class Statistics(private val config: Config) {
 
         statsService.scheduleAtFixedRate(
             this::computeStats.logAllExceptions(),
-            0,
+            1,
             1,
             TimeUnit.MINUTES
         )
     }
 
     fun addStatisticsConsumer(consumer: StatisticsConsumer) {
+        logger.debug { "Adding stats consumer ${consumer.javaClass.name}" }
         consumers += consumer
     }
 
     fun removeStatisticsConsumer(consumer: StatisticsConsumer) {
+        logger.debug { "Removing stats consumer ${consumer.javaClass.name}" }
         consumers -= consumer
     }
 
     fun onGameResumed() {
+        logger.debug { "Resuming game stats" }
         gameActiveLastHeartbeat = Clock.System.now()
     }
 
     fun onGamePaused() {
+        logger.debug { "Pausing game stats" }
         gameActiveLastHeartbeat?.let {
             val playtimeSinceLastHeartbeat = Clock.System.now() - it
             config.edit {
@@ -103,6 +108,9 @@ class Statistics(private val config: Config) {
             $topUserOverview
         """.trimMargin()
 
+        logger.info { "Sending statistics update" }
         consumers.forEach({ consumer: StatisticsConsumer -> consumer.acceptStatistics(stats) }.logAllExceptions())
     }
 }
+
+private val logger = KotlinLogging.logger {}

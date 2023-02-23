@@ -1,10 +1,10 @@
 package io.github.zabuzard.discordplays
 
-import io.github.zabuzard.discordplays.Extensions.toInputStream
-import io.ktor.utils.io.printStack
+import mu.KotlinLogging
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.CancellationException
 import javax.imageio.ImageIO
 
 object Extensions {
@@ -12,7 +12,9 @@ object Extensions {
         try {
             this@logAllExceptions.run()
         } catch (e: Throwable) {
-            e.printStack()
+            if (e !is CancellationException) {
+                logger.error(e) { UNKNOWN_ERROR_MESSAGE }
+            }
         }
     }
 
@@ -20,7 +22,9 @@ object Extensions {
         try {
             invoke()
         } catch (e: Throwable) {
-            e.printStack()
+            if (e !is CancellationException) {
+                logger.error(e) { UNKNOWN_ERROR_MESSAGE }
+            }
         }
     }
 
@@ -28,7 +32,9 @@ object Extensions {
         try {
             this.invoke(it)
         } catch (e: Throwable) {
-            e.printStack()
+            if (e !is CancellationException) {
+                logger.error(e) { UNKNOWN_ERROR_MESSAGE }
+            }
         }
     }
 
@@ -41,3 +47,7 @@ object Extensions {
             it
         }.toByteArray().toInputStream()
 }
+
+private val logger = KotlinLogging.logger {}
+
+private const val UNKNOWN_ERROR_MESSAGE = "Unknown error"
