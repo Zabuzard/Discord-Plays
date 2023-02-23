@@ -93,15 +93,15 @@ class Statistics(private val config: Config) {
         }
 
         val topUserOverview = userIdToInputSorted.take(20).joinToString("\n") { (id, inputCount) ->
-            "    * ${userToName[id]} - $inputCount"
+            "|* ${userToName[id]} - $inputCount"
         }
 
         val stats = """
-            Playtime: ${config.playtimeMs.milliseconds}
-            Received $totalInputCount inputs by $uniqueUserCount users.
-            Top players:
+            |Playtime: ${config.playtimeMs.milliseconds}
+            |Received $totalInputCount inputs by $uniqueUserCount users.
+            |Top players:
             $topUserOverview
-        """.trimIndent()
+        """.trimMargin()
 
         consumers.forEach({ consumer: StatisticsConsumer -> consumer.acceptStatistics(stats) }.logAllExceptions())
     }
