@@ -169,6 +169,19 @@ fun ownerCommands(
             autoSaveConversation(bot, emulator, autoSaver, author).startPrivately(discord, author)
         }
     }
+
+    sub("clear-stats", "Clears all statistics, use when starting a new run") {
+        execute {
+            if (requireOwnerPermission(config)) return@execute
+
+            config.edit {
+                playtimeMs = 0
+                userToInputCount = emptyList()
+            }
+
+            respond("Cleared all statistics.")
+        }
+    }
 }
 
 const val OWNER_COMMAND_NAME = "owner"
