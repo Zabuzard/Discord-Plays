@@ -21,7 +21,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @Service
 class StreamRenderer(
     private val emulator: Emulator,
-    private val inputOverlayRenderer: InputOverlayRenderer
+    private val overlayRenderer: OverlayRenderer
 ) {
     private var consumers = emptyList<StreamConsumer>()
 
@@ -92,8 +92,9 @@ class StreamRenderer(
 
             globalMessage?.let { renderBanner(it, g, SCREEN_WIDTH, SCREEN_HEIGHT, Placement.TOP) }
 
+            // Right side
             g.translate(SCREEN_WIDTH, 0)
-            inputOverlayRenderer.renderOverlay(g, OVERLAY_WIDTH, OVERLAY_HEIGHT)
+            overlayRenderer.renderOverlay(g, OVERLAY_WIDTH, OVERLAY_HEIGHT)
 
             g.dispose()
         }
