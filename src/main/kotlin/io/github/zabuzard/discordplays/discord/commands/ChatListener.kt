@@ -11,10 +11,9 @@ fun onChatMessage(
     bot: DiscordBot
 ) = listeners {
     on<MessageCreateEvent> {
-        val hostChannels = config.hosts.map { it.chatDescriptionMessageId.channelId }
-        if (message.channelId !in hostChannels) {
-            return@on
-        }
+        val host = config.hosts.find { it.chatDescriptionMessageId.channelId == message.channelId }
+            ?: return@on
+
         if (message.author?.isBot == true) {
             return@on
         }
@@ -22,6 +21,6 @@ fun onChatMessage(
             return@on
         }
 
-        bot.onChatMessage(message.toChatMessage())
+        bot.onChatMessage(message.toChatMessage(host.guildId))
     }
 }

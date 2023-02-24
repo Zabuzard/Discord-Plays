@@ -34,7 +34,6 @@ class OverlayRenderer(
     private val chatContentFont = Font(config.font, Font.PLAIN, 10)
     private val timestampFont = Font(config.font, Font.PLAIN, 10)
 
-
     fun recordUserInput(input: UserInput) {
         inputHistory += input
 

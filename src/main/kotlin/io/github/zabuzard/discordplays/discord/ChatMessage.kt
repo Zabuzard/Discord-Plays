@@ -1,11 +1,12 @@
 package io.github.zabuzard.discordplays.discord
 
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.entity.Member
 import dev.kord.core.entity.Message
-import dev.kord.core.entity.User
 
 data class ChatMessage(
-    val author: User,
+    val author: Member,
     val content: String
 )
 
-fun Message.toChatMessage() = ChatMessage(author!!, content)
+suspend fun Message.toChatMessage(guildId: Snowflake) = ChatMessage(author!!.asMember(guildId), content)

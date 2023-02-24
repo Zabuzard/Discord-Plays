@@ -2,6 +2,7 @@ package io.github.zabuzard.discordplays.discord
 
 import com.sksamuel.aedile.core.caffeineBuilder
 import dev.kord.common.entity.Snowflake
+import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.behavior.edit
 import dev.kord.core.entity.Guild
 import dev.kord.rest.builder.message.modify.embed
@@ -29,6 +30,7 @@ import kotlinx.datetime.Instant
 import me.jakejmattson.discordkt.Discord
 import me.jakejmattson.discordkt.annotations.Service
 import me.jakejmattson.discordkt.dsl.edit
+import me.jakejmattson.discordkt.extensions.author
 import me.jakejmattson.discordkt.extensions.fullName
 import mu.KotlinLogging
 import mu.withLoggingContext
@@ -166,6 +168,18 @@ class DiscordBot(
 
     fun onChatMessage(message: ChatMessage) {
         overlayRenderer.recordChatMessage(message)
+
+        forAllHosts {
+            if (it.guild.id == message.author.guildId) {
+                return@forAllHosts
+            }
+
+            it.chatDescriptionMessage.channel.createEmbed {
+                author(message.author)
+                description = message.content
+                footer { text = "from ${message.author.getGuild().name}" }
+            }
+        }
     }
 
     fun activateLocalDisplay(sound: Boolean) {
