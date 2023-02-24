@@ -8,7 +8,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import me.jakejmattson.discordkt.annotations.Service
-import org.checkerframework.checker.units.qual.g
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics2D
@@ -20,7 +19,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 @Service
-class OverlayRenderer {
+class InputOverlayRenderer {
     private val history: MutableList<UserInput> = ArrayDeque()
 
     fun recordUserInput(input: UserInput) {

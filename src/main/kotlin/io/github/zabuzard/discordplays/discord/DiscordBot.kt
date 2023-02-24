@@ -17,7 +17,7 @@ import io.github.zabuzard.discordplays.local.FrameRecorder
 import io.github.zabuzard.discordplays.local.LocalDisplay
 import io.github.zabuzard.discordplays.stream.BannerRendering
 import io.github.zabuzard.discordplays.stream.BannerRendering.Placement
-import io.github.zabuzard.discordplays.stream.OverlayRenderer
+import io.github.zabuzard.discordplays.stream.InputOverlayRenderer
 import io.github.zabuzard.discordplays.stream.SCREEN_HEIGHT
 import io.github.zabuzard.discordplays.stream.SCREEN_WIDTH
 import io.github.zabuzard.discordplays.stream.StreamConsumer
@@ -42,7 +42,7 @@ class DiscordBot(
     private val config: Config,
     private val emulator: Emulator,
     private val streamRenderer: StreamRenderer,
-    private val overlayRenderer: OverlayRenderer,
+    private val inputOverlayRenderer: InputOverlayRenderer,
     private val localDisplay: LocalDisplay,
     private val statistics: Statistics,
     private val autoSaver: AutoSaver,
@@ -142,7 +142,7 @@ class DiscordBot(
         return when {
             timeSinceLastInput >= userInputRateLimit -> {
                 logger.debug { withLoggingContext("user" to userName) { "$userName pressed ${input.button}" } }
-                overlayRenderer.recordUserInput(input)
+                inputOverlayRenderer.recordUserInput(input)
                 emulator.clickButton(input.button)
 
                 userInputCache.put(userId, now)
