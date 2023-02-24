@@ -191,7 +191,7 @@ class DiscordBot(
     fun sendChatMessage(message: String) {
         logger.info { "Sending chat message: $message" }
         forAllHosts {
-            it.chatDescriptionMessage.channel.createMessage(message)
+            it.chatDescriptionMessage.channel.createMessage(message).pin()
         }
     }
 

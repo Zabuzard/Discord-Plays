@@ -36,7 +36,7 @@ fun hostCommands(
                 addFile("stream.png", javaClass.getResourceAsStream(coverImage)!!)
             }
 
-            val chatDescriptionMessage = createChat(streamMessage, config)
+            val chatDescriptionMessage = createChat(streamMessage, config).also { it.pin() }
 
             bot.addHost(Host(guild, streamMessage, chatDescriptionMessage))
         }
