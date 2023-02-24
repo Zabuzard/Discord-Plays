@@ -17,6 +17,9 @@ import me.jakejmattson.discordkt.commands.subcommand
 import me.jakejmattson.discordkt.dsl.edit
 import me.jakejmattson.discordkt.extensions.fullName
 import mu.KotlinLogging
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.core.config.Configurator
 
 fun ownerCommands(
     config: Config,
@@ -194,6 +197,19 @@ fun ownerCommands(
             }
 
             with("Cleared all statistics.") {
+                logger.info { this }
+                respond(this)
+            }
+        }
+    }
+
+    sub("log-level", "Changes the log level") {
+        val levels = Level.values().map { it.name()!! }.toTypedArray()
+        execute(ChoiceArg("level", "the level to set", *levels)) {
+            val level = Level.getLevel(args.first)!!
+            Configurator.setAllLevels(LogManager.getRootLogger().name, level)
+
+            with("Set the log level to $level.") {
                 logger.info { this }
                 respond(this)
             }
