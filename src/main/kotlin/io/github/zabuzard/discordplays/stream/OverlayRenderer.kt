@@ -28,6 +28,12 @@ class OverlayRenderer(
     private val inputHistory: MutableList<UserInput> = ArrayDeque()
     private val chatHistory: MutableList<ChatMessage> = Collections.synchronizedList(ArrayDeque())
 
+    private val inputTextFont = Font(config.font, Font.BOLD, 13)
+    private val chatNameFont = Font(config.font, Font.BOLD, 10)
+    private val chatContentFont = Font(config.font, Font.PLAIN, 10)
+    private val timestampFont = Font(config.font, Font.PLAIN, 10)
+
+
     fun recordUserInput(input: UserInput) {
         inputHistory += input
 
@@ -139,7 +145,6 @@ private const val BUTTON_LABEL_OFFSET_X = 7
 private const val BUTTON_LABEL_WIDTH = 15
 private const val INPUT_NAME_OFFSET_X = 35
 private const val INPUT_NAME_MAX_LENGTH = 18
-private val inputTextFont = Font("Arial", Font.BOLD, 13)
 
 private val inputHistoryEntryOldAfter = (10).seconds
 private val inputHistoryEntryExpiresAfter = (5).minutes
@@ -152,11 +157,8 @@ private const val CHAT_CONTENT_OFFSET_X = 2
 private const val CHAT_NAME_MAX_LENGTH = 10
 private const val CHAT_CONTENT_MAX_LENGTH = 20
 private const val CHAT_NAME_MAX_COLOR_RGB = 150
-private val chatNameFont = Font("Arial", Font.BOLD, 10)
-private val chatContentFont = Font("Arial", Font.PLAIN, 10)
 
 private const val TIMESTAMP_PADDING = 1
-private val timestampFont = Font("Arial", Font.PLAIN, 10)
 private val timestampFormat = DateTimeFormatter.ofPattern("yyy-MM-dd hh:mm:ss", Locale.US)
 
 private fun Button.label() = when (this) {

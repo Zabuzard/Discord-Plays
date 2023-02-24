@@ -1,5 +1,6 @@
 package io.github.zabuzard.discordplays.stream
 
+import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.gif.Gif
 import io.github.zabuzard.discordplays.emulation.Emulator
@@ -20,6 +21,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Service
 class StreamRenderer(
+    private val config: Config,
     private val emulator: Emulator,
     private val overlayRenderer: OverlayRenderer
 ) {
@@ -90,7 +92,7 @@ class StreamRenderer(
             val g = createGraphics()
             emulator.render(g, EMULATOR_SCALING_FACTOR)
 
-            globalMessage?.let { renderBanner(it, g, SCREEN_WIDTH, SCREEN_HEIGHT, Placement.TOP) }
+            globalMessage?.let { renderBanner(it, g, config.font, SCREEN_WIDTH, SCREEN_HEIGHT, Placement.TOP) }
 
             // Right side
             g.translate(SCREEN_WIDTH, 0)

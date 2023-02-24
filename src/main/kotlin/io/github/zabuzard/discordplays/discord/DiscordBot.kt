@@ -236,6 +236,7 @@ class DiscordBot(
                     BannerRendering.renderBanner(
                         PAUSED_MESSAGE,
                         g,
+                        config.font,
                         SCREEN_WIDTH,
                         SCREEN_HEIGHT,
                         Placement.CENTER

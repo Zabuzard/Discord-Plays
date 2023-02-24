@@ -17,5 +17,6 @@ data class Config(
     var autoSaveRemindAt: LocalTime = LocalTime(13, 0),
     var userToInputCount: List<Pair<UserSnapshot, Int>> = emptyList(),
     var playtimeMs: Long = 0,
-    var recordingPath: String = "recording"
+    var recordingPath: String = "recording",
+    var font: String = "Sans Serif"
 ) : Data()

@@ -15,11 +15,12 @@ object BannerRendering {
     fun renderBanner(
         message: String,
         g: Graphics2D,
+        fontType: String,
         width: Int,
         screenHeight: Int,
         placement: Placement
     ) {
-        g.font = Font("Arial", Font.PLAIN, 20)
+        g.font = Font(fontType, Font.PLAIN, 20)
         val allLineData = message.chunked(LINE_MAX_LENGTH)
             .take(MAX_LINES)
             .map { g.lineData(it) }
