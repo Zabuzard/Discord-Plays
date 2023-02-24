@@ -8,6 +8,9 @@ import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.mentionCommandOrNull
 import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.requireOwnerPermission
 import io.github.zabuzard.discordplays.emulation.Emulator
+import io.github.zabuzard.discordplays.local.FrameRecorder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import me.jakejmattson.discordkt.arguments.AnyArg
 import me.jakejmattson.discordkt.arguments.BooleanArg
@@ -20,6 +23,9 @@ import mu.KotlinLogging
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.config.Configurator
+import java.nio.file.Path
+import java.util.concurrent.TimeUnit
+import kotlin.io.path.notExists
 
 fun ownerCommands(
     config: Config,
@@ -218,12 +224,56 @@ fun ownerCommands(
     sub("log-level", "Changes the log level") {
         val levels = Level.values().map { it.name()!! }.toTypedArray()
         execute(ChoiceArg("level", "the level to set", *levels)) {
+            if (requireOwnerPermission(config)) return@execute
+
             val level = Level.getLevel(args.first)!!
             Configurator.setAllLevels(LogManager.getRootLogger().name, level)
 
             with("Set the log level to $level.") {
                 logger.info { this }
                 respond(this)
+            }
+        }
+    }
+
+    sub("create-video", "Creates a video out of the recorded frames") {
+        execute(AnyArg("date", "to use frames of, e.g. 2023-02-23, also folder name")) {
+            if (requireOwnerPermission(config)) return@execute
+
+            val date = args.first
+
+            val frameFolder = Path.of(config.recordingPath, date)
+            if (frameFolder.notExists()) {
+                respond("Could not find any recordings for $date.")
+                return@execute
+            }
+            respond("Command invoked, video is being created.")
+
+            withContext(Dispatchers.IO) {
+                val process = ProcessBuilder(
+                    "ffmpeg",
+                    "-framerate",
+                    "5",
+                    "-r",
+                    "5",
+                    "-i",
+                    "%d${FrameRecorder.FRAME_SUFFIX}",
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-profile:v",
+                    "high",
+                    "-level:v",
+                    "4.1",
+                    "-crf:v",
+                    "20",
+                    "-movflags",
+                    "+faststart",
+                    "$date.mp4"
+                ).directory(frameFolder.toFile()).start()
+
+                if (!process.waitFor(30, TimeUnit.SECONDS)) {
+                    process.destroy()
+                }
             }
         }
     }

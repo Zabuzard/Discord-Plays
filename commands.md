@@ -19,6 +19,7 @@
 | ban            | user              | Bans an user from the event, their input will be blocked          |
 | chat-message   | message           | Sends a message to the chats of all hosts                         |
 | clear-stats    |                   | Clears all statistics, use when starting a new run                |
+| create-video   | date              | Creates a video out of the recorded frames                        |
 | game-metadata  | entity, value     | Change the metadata of the game played                            |
 | global-message | [message]         | Attaches a global message to the stream                           |
 | local-display  | activate, [sound] | Activates a local display on the bots machine for manual control. |

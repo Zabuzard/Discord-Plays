@@ -60,7 +60,7 @@ class FrameRecorder(
         }
         previousFrameDate = date
 
-        val framePath = Path.of(config.recordingPath, date.toString(), "$frameId frame.png")
+        val framePath = Path.of(config.recordingPath, date.toString(), "$frameId$FRAME_SUFFIX")
         Files.createDirectories(framePath)
         ImageIO.write(frame, "png", framePath.toFile())
     }
@@ -69,6 +69,10 @@ class FrameRecorder(
         Files.list(frameFolder).map(Path::name).filter { it.endsWith("png") }
             .mapToLong { it.split(" ", limit = 2)[0].toLong() }
             .max().orElse(-1) + 1
+
+    companion object {
+        const val FRAME_SUFFIX = " frame.png"
+    }
 }
 
 private const val SKIP_FRAMES = 1
