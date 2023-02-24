@@ -188,6 +188,13 @@ class DiscordBot(
         }
     }
 
+    fun sendChatMessage(message: String) {
+        logger.info { "Sending chat message: $message" }
+        forAllHosts {
+            it.chatDescriptionMessage.channel.createMessage(message)
+        }
+    }
+
     suspend fun setCommunityMessage(guild: Guild, message: String?) {
         if (message != null) {
             require(message.isNotEmpty()) {
@@ -243,45 +250,21 @@ class DiscordBot(
         sendStreamFile("stream.png", javaClass.getResourceAsStream(OFFLINE_COVER_RESOURCE)!!)
 
     private fun sendStreamFile(name: String, data: InputStream) {
-        runBlocking {
-            guildToHost.values.forEach {
-                launch {
-                    try {
-                        it.streamMessage.edit {
-                            files?.clear()
-                            addFile(name, data)
-                        }
-                    } catch (e: KtorRequestException) {
-                        if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
-                            removeHost(it)
-                        } else {
-                            throw e
-                        }
-                    }
-                }
+        forAllHosts {
+            it.streamMessage.edit {
+                files?.clear()
+                addFile(name, data)
             }
         }
     }
 
     override fun acceptStatistics(stats: String) {
-        runBlocking {
-            guildToHost.values.forEach {
-                launch {
-                    try {
-                        it.chatDescriptionMessage.edit {
-                            embeds?.clear()
-                            embed {
-                                title = "Stats"
-                                description = stats
-                            }
-                        }
-                    } catch (e: KtorRequestException) {
-                        if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
-                            removeHost(it)
-                        } else {
-                            throw e
-                        }
-                    }
+        forAllHosts {
+            it.chatDescriptionMessage.edit {
+                embeds?.clear()
+                embed {
+                    title = "Stats"
+                    description = stats
                 }
             }
         }
@@ -294,6 +277,24 @@ class DiscordBot(
     private suspend fun loadHosts(discord: Discord) {
         guildToHost = config.hosts.mapNotNull { it.toHost(discord) }.associateBy { it.guild }
         saveHosts()
+    }
+
+    private fun forAllHosts(consumer: suspend (Host) -> Unit) {
+        runBlocking {
+            guildToHost.values.forEach {
+                launch {
+                    try {
+                        consumer.invoke(it)
+                    } catch (e: KtorRequestException) {
+                        if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
+                            removeHost(it)
+                        } else {
+                            throw e
+                        }
+                    }
+                }
+            }
+        }
     }
 
     companion object {

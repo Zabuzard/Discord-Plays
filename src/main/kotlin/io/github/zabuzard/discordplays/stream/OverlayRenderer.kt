@@ -9,7 +9,6 @@ import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import me.jakejmattson.discordkt.annotations.Service
 import org.checkerframework.checker.units.qual.g
-import org.intellij.lang.annotations.JdkConstants.FontStyle
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics2D

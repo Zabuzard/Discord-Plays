@@ -17,6 +17,7 @@
 |----------------|-------------------|-------------------------------------------------------------------|
 | add-owner      | user              | Give another user owner-permission                                |
 | ban            | user              | Bans an user from the event, their input will be blocked          |
+| chat-message   | message           | Sends a message to the chats of all hosts                         |
 | clear-stats    |                   | Clears all statistics, use when starting a new run                |
 | game-metadata  | entity, value     | Change the metadata of the game played                            |
 | global-message | [message]         | Attaches a global message to the stream                           |

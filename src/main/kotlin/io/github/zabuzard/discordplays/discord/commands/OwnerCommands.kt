@@ -103,12 +103,24 @@ fun ownerCommands(
             if (requireOwnerPermission(config)) return@execute
 
             val message = args.first
-            with(bot) {
-                setGlobalMessage(message)
-            }
+            bot.setGlobalMessage(message)
 
             val actionVerb = if (message == null) "Cleared" else "Set"
             respond("$actionVerb the global message.")
+        }
+    }
+
+    sub("chat-message", "Sends a message to the chats of all hosts") {
+        execute(
+            AnyArg("message")
+        ) {
+            if (requireOwnerPermission(config)) return@execute
+            val hook = interaction!!.deferEphemeralResponse()
+
+            val message = args.first
+            bot.sendChatMessage(message)
+
+            hook.respond { content = "Send the chat message." }
         }
     }
 
