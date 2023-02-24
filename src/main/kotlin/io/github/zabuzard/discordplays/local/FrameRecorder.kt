@@ -65,9 +65,10 @@ class FrameRecorder(
         ImageIO.write(frame, "png", framePath.toFile())
     }
 
-    private fun nextFrameIdInFolder(frameFolder: Path) = Files.list(frameFolder).map(Path::name)
-        .mapToLong { it.split(" ", limit = 2)[0].toLong() }
-        .max().orElse(-1) + 1
+    private fun nextFrameIdInFolder(frameFolder: Path) =
+        Files.list(frameFolder).map(Path::name).filter { it.endsWith("png") }
+            .mapToLong { it.split(" ", limit = 2)[0].toLong() }
+            .max().orElse(-1) + 1
 }
 
 private const val SKIP_FRAMES = 1
