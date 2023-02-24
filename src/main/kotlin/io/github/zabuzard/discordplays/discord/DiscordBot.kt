@@ -57,7 +57,10 @@ class DiscordBot(
 
     var userInputLockedToOwners = false
         set(value) {
-            field = value.also { logger.info { "User input locked to owners: $value" } }
+            logger.info { "User input locked to owners: $value" }
+            field = value
+
+            setGlobalMessage(if (value) "User input is currently locked" else null)
         }
     var gameCurrentlyRunning = false
         private set
@@ -73,6 +76,7 @@ class DiscordBot(
 
     suspend fun startGame(discord: Discord) {
         logger.info { "Starting game" }
+        userInputLockedToOwners = true
         loadHosts(discord)
 
         emulator.start()
