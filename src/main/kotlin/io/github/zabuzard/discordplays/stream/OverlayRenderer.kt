@@ -1,5 +1,6 @@
 package io.github.zabuzard.discordplays.stream
 
+import dev.kord.core.entity.User
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.ChatMessage
@@ -82,13 +83,15 @@ class OverlayRenderer(
         val buttonLabel = button.label()
         val displayName = user.username.take(INPUT_NAME_MAX_LENGTH)
 
-        g.color = if (sendAt < oldBefore) Color.GRAY else Color.WHITE
         // Start top left
         val y = INPUT_HISTORY_OFFSET_Y + INPUT_HISTORY_ENTRY_PADDING_Y * i
-
         val buttonX =
             BUTTON_LABEL_OFFSET_X + ((BUTTON_LABEL_WIDTH - g.lineData(buttonLabel).width) / 2)
+
+        g.color = if (sendAt < oldBefore) Color.GRAY else Color.WHITE
         g.drawString(buttonLabel, buttonX, y)
+
+        g.color = user.color().let { if (sendAt < oldBefore) it.darker() else it }
         g.drawString(displayName, INPUT_NAME_OFFSET_X, y)
     }
 
@@ -109,13 +112,7 @@ class OverlayRenderer(
         val y = CHAT_HISTORY_OFFSET_Y + CHAT_HISTORY_ENTRY_PADDING_Y * i
         val contentX = CHAT_NAME_OFFSET_X + g.lineData(displayName).width + CHAT_CONTENT_OFFSET_X
 
-        g.color = Random(author.id.value.toLong()).let {
-            Color(
-                it.nextInt(CHAT_NAME_MAX_COLOR_RGB),
-                it.nextInt(CHAT_NAME_MAX_COLOR_RGB),
-                it.nextInt(CHAT_NAME_MAX_COLOR_RGB)
-            )
-        }
+        g.color = author.color()
         g.drawString(displayName, CHAT_NAME_OFFSET_X, y)
         g.font = chatContentFont
         g.color = Color.WHITE
@@ -170,4 +167,12 @@ private fun Button.label() = when (this) {
     Button.DOWN -> "▼"
     Button.LEFT -> "◄"
     Button.RIGHT -> "►"
+}
+
+private fun User.color() = Random(id.value.toLong()).let {
+    Color(
+        it.nextInt(CHAT_NAME_MAX_COLOR_RGB),
+        it.nextInt(CHAT_NAME_MAX_COLOR_RGB),
+        it.nextInt(CHAT_NAME_MAX_COLOR_RGB)
+    )
 }
