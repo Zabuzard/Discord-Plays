@@ -8,6 +8,7 @@ import dev.kord.x.emoji.Emojis
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
+import io.github.zabuzard.discordplays.Extensions.toByteArray
 import io.github.zabuzard.discordplays.Extensions.toInputStream
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.emulation.Emulator
@@ -194,7 +195,7 @@ private suspend fun ConversationBuilder.sendFrameSnapshot(
     autoSaver: AutoSaver
 ) {
     dmChannel.createMessage {
-        addFile("snapshot.png", autoSaver.lastFrame.toInputStream())
+        addFile("snapshot.png", autoSaver.lastFrame.toByteArray().toInputStream())
     }
 }
 

@@ -8,6 +8,7 @@ import dev.kord.core.entity.Guild
 import dev.kord.rest.builder.message.modify.embed
 import dev.kord.rest.request.KtorRequestException
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.Extensions.toByteArray
 import io.github.zabuzard.discordplays.Extensions.toInputStream
 import io.github.zabuzard.discordplays.discord.commands.AutoSaver
 import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.clearEmbeds
@@ -255,24 +256,24 @@ class DiscordBot(
                         SCREEN_HEIGHT,
                         Placement.CENTER
                     )
-                }.let {
-                    sendStreamFile("stream.png", it.toInputStream())
+                }.toByteArray().let {
+                    sendStreamFile("stream.png") { it.toInputStream() }
                 }
             }
             return
         }
 
-        sendStreamFile("image.gif", gif.toInputStream())
+        sendStreamFile("image.gif") { gif.toInputStream() }
     }
 
     private fun sendOfflineImage() =
-        sendStreamFile("stream.png", javaClass.getResourceAsStream(OFFLINE_COVER_RESOURCE)!!)
+        sendStreamFile("stream.png") { javaClass.getResourceAsStream(OFFLINE_COVER_RESOURCE)!! }
 
-    private fun sendStreamFile(name: String, data: InputStream) {
+    private fun sendStreamFile(name: String, dataProducer: () -> InputStream) {
         forAllHosts {
             it.streamMessage.edit {
                 files?.clear()
-                addFile(name, data)
+                addFile(name, dataProducer())
             }
         }
     }

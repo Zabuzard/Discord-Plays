@@ -1,5 +1,6 @@
 package io.github.zabuzard.discordplays
 
+import io.github.zabuzard.discordplays.Extensions.toInputStream
 import mu.KotlinLogging
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
@@ -43,11 +44,10 @@ object Extensions {
     fun ByteArray.toInputStream() =
         ByteArrayInputStream(this)
 
-    fun BufferedImage.toInputStream() =
-        ByteArrayOutputStream().use {
-            ImageIO.write(this, "png", it)
-            it
-        }.toByteArray().toInputStream()
+    fun BufferedImage.toByteArray(): ByteArray = ByteArrayOutputStream().use {
+        ImageIO.write(this, "png", it)
+        it
+    }.toByteArray()
 
     fun Duration.formatted() = toJavaDuration().run {
         listOf(
