@@ -1,6 +1,5 @@
 package io.github.zabuzard.discordplays.stream
 
-import dev.kord.common.entity.Snowflake.Companion.max
 import dev.kord.core.entity.User
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import io.github.zabuzard.discordplays.Config

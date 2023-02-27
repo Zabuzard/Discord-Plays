@@ -20,7 +20,7 @@ object CommandExtensions {
         return true
     }
 
-    suspend fun UserMessageModifyBuilder.clearEmbeds() {
+    fun UserMessageModifyBuilder.clearEmbeds() {
         embed { description = "" }
         embeds?.clear()
     }
