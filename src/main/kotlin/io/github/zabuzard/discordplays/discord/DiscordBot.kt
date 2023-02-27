@@ -54,7 +54,7 @@ class DiscordBot(
 
     private val userInputCache = caffeineBuilder<Snowflake, Instant> {
         maximumSize = 1_000
-        expireAfterWrite = (10).seconds
+        expireAfterWrite = 10.seconds
     }.build()
 
     var userInputLockedToOwners = false
@@ -324,8 +324,8 @@ class DiscordBot(
 
 private val logger = KotlinLogging.logger {}
 
-private val userInputRateLimit = (1.5).seconds
+private val userInputRateLimit = 1.5.seconds
 private const val MESSAGE_NOT_FOUND_ERROR = "UnknownMessage"
 
-private val pauseAfterNoInputFor = (5).minutes
+private val pauseAfterNoInputFor = 5.minutes
 private const val PAUSED_MESSAGE = "Game is paused, press any key to continue"

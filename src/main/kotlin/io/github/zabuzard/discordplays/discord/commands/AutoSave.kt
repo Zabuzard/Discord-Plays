@@ -54,13 +54,13 @@ fun autoSaveConversation(
     val dmChannel = user.getDmChannel()
 
     sendFrameSnapshot(dmChannel, autoSaver)
-    delay((3).seconds)
+    delay(3.seconds)
     val start = reminderDialog()
     if (!start) return@conversation
 
     bot.userInputLockedToOwners = true
     bot.setGlobalMessage("Auto saving in progress - please wait")
-    delay((1).seconds)
+    delay(1.seconds)
 
     sendFrameSnapshot(dmChannel, autoSaver)
     val ready = preparationDialog()
@@ -70,7 +70,7 @@ fun autoSaveConversation(
     }
 
     emulator.clickButton(Button.START)
-    delay((1).seconds)
+    delay(1.seconds)
     sendFrameSnapshot(dmChannel, autoSaver)
     when (val cursorInput = menuDialog().first()) {
         CANCEL_LABEL -> {
@@ -84,14 +84,14 @@ fun autoSaveConversation(
             val button = Button.valueOf(buttonName)
             repeat(count.toInt()) {
                 emulator.clickButton(button)
-                delay((500).milliseconds)
+                delay(500.milliseconds)
             }
         }
     }
     emulator.clickButton(Button.A)
-    delay((3).seconds)
+    delay(3.seconds)
     emulator.clickButton(Button.A)
-    delay((6).seconds)
+    delay(6.seconds)
 
     sendFrameSnapshot(dmChannel, autoSaver)
     confirmationDialog()
@@ -229,7 +229,7 @@ class AutoSaver(
     private suspend fun runRoutine(bot: DiscordBot, emulator: Emulator, discord: Discord) {
         while (coroutineContext.isActive) {
             try {
-                val remindIn = Clock.System.now().untilNext(config.autoSaveRemindAt) + (1).minutes
+                val remindIn = Clock.System.now().untilNext(config.autoSaveRemindAt) + 1.minutes
                 logger.info { "Reminding to save in: $remindIn" }
                 delay(remindIn)
 

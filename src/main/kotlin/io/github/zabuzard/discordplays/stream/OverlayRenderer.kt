@@ -85,7 +85,7 @@ class OverlayRenderer(
         // Start top left
         val y = INPUT_HISTORY_OFFSET_Y + INPUT_HISTORY_ENTRY_PADDING_Y * i
         val buttonX =
-            BUTTON_LABEL_OFFSET_X + ((BUTTON_LABEL_WIDTH - g.lineData(buttonLabel).width) / 2)
+            BUTTON_LABEL_OFFSET_X + (BUTTON_LABEL_WIDTH - g.lineData(buttonLabel).width) / 2
 
         g.color = if (sendAt < oldBefore) Color.GRAY else Color.WHITE
         g.drawString(buttonLabel, buttonX, y)
@@ -142,8 +142,8 @@ private const val BUTTON_LABEL_WIDTH = 15
 private const val INPUT_NAME_OFFSET_X = 35
 private const val INPUT_NAME_MAX_LENGTH = 18
 
-private val inputHistoryEntryOldAfter = (10).seconds
-private val inputHistoryEntryExpiresAfter = (5).minutes
+private val inputHistoryEntryOldAfter = 10.seconds
+private val inputHistoryEntryExpiresAfter = 5.minutes
 
 private const val CHAT_HISTORY_OFFSET_Y = 255
 private const val CHAT_HISTORY_ENTRY_PADDING_Y = 10

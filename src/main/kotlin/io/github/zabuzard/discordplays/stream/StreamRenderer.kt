@@ -104,11 +104,11 @@ class StreamRenderer(
 
 private val logger = KotlinLogging.logger {}
 
-private val renderFrameRate = (150).milliseconds
+private val renderFrameRate = 150.milliseconds
 
 // GIF plays slower to account for the loading times, that way the experience is
 // smoother and does not display the last frame for a longer time
-private val gifFrameRate = (220).milliseconds
+private val gifFrameRate = 220.milliseconds
 
 private const val EMULATOR_SCALING_FACTOR = 2.5
 private const val FLUSH_GIF_AT_FRAMES = 30

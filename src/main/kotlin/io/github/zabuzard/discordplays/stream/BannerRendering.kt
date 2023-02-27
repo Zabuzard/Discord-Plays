@@ -48,7 +48,7 @@ object BannerRendering {
             val lineHeight = lineBottomY - lineTopY
 
             val lineStartX = (width - it.width) / 2
-            val lineBaselineY = lineTopY + ((lineHeight - it.height) / 2) + it.ascent
+            val lineBaselineY = lineTopY + (lineHeight - it.height) / 2 + it.ascent
             g.drawString(it.line, lineStartX, lineBaselineY)
 
             lineTopY = lineBottomY

@@ -23,4 +23,4 @@ internal class ClickController : Controller {
     fun releaseButton(button: Button) = buttonListener.onButtonRelease(button)
 }
 
-private val clickDuration = (250).milliseconds
+private val clickDuration = 250.milliseconds

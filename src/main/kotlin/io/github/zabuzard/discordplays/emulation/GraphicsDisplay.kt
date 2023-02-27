@@ -89,7 +89,7 @@ private fun Int.toRgbColor(): Int {
     val b = this shr 10 and 0x1f
 
     return (
-        (r * 8 shl 16)
+        r * 8 shl 16
             or (g * 8 shl 8)
             or (b * 8 shl 0)
         )
