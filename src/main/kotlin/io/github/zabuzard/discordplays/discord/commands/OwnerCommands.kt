@@ -24,7 +24,6 @@ import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.config.Configurator
 import java.nio.file.Path
-import java.util.concurrent.TimeUnit
 import kotlin.io.path.notExists
 
 fun ownerCommands(
@@ -270,10 +269,6 @@ fun ownerCommands(
                     "+faststart",
                     "$date.mp4"
                 ).directory(frameFolder.toFile()).start()
-
-                if (!process.waitFor(30, TimeUnit.SECONDS)) {
-                    process.destroy()
-                }
             }
         }
     }
