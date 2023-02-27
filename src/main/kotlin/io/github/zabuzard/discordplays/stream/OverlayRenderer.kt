@@ -1,5 +1,6 @@
 package io.github.zabuzard.discordplays.stream
 
+import dev.kord.common.entity.Snowflake.Companion.max
 import dev.kord.core.entity.User
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import io.github.zabuzard.discordplays.Config
@@ -152,7 +153,6 @@ private const val CHAT_NAME_OFFSET_X = 5
 private const val CHAT_CONTENT_OFFSET_X = 2
 private const val CHAT_NAME_MAX_LENGTH = 10
 private const val CHAT_CONTENT_MAX_LENGTH = 20
-private const val CHAT_NAME_MAX_COLOR_RGB = 150
 
 private const val TIMESTAMP_PADDING = 1
 private val timestampFormat = DateTimeFormatter.ofPattern("yyy-MM-dd hh:mm:ss", Locale.US)
@@ -169,9 +169,12 @@ private fun Button.label() = when (this) {
 }
 
 private fun User.color() = Random(id.value.toLong()).let {
-    Color(
-        it.nextInt(CHAT_NAME_MAX_COLOR_RGB),
-        it.nextInt(CHAT_NAME_MAX_COLOR_RGB),
-        it.nextInt(CHAT_NAME_MAX_COLOR_RGB)
-    )
+    // One channel is bright to ensure it stands out on black background
+    val (r, g, b) = listOf(
+        it.nextInt(150, 256),
+        it.nextInt(25, 256),
+        it.nextInt(25, 256)
+    ).shuffled(it)
+
+    Color(r, g, b)
 }
