@@ -27,6 +27,14 @@ events available to everyone.
 
 We encourage you to download the bot and self-host your own events! 👍
 
+### Lag
+
+Due to the design, the game has the following lag:
+
+* 1s - input, from clicking the button to the game playing the action
+* 5s - video, from rendering the footage until it arrives on your machine
+* 10s - reaction, from clicking the button until you see the moment on your screen
+
 ## Get started
 
 Download the latest version from
@@ -142,7 +150,7 @@ As of now, there are no guidelines you have to follow - just try to write readab
 
 ### Tech Stack
 
-The main technology being used are
+The main technologies being used are
 
 * Kotlin
 * Gradle
