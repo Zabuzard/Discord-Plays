@@ -2,6 +2,7 @@ package io.github.zabuzard.discordplays.discord.stats
 
 import dev.kord.common.entity.Snowflake
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.Extensions.formatted
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.UserInput
 import kotlinx.datetime.Clock
@@ -102,7 +103,7 @@ class Statistics(private val config: Config) {
         }
 
         val stats = """
-            |Playtime: ${config.playtimeMs.milliseconds}
+            |Playtime: ${config.playtimeMs.milliseconds.formatted()}
             |Received $totalInputCount inputs by $uniqueUserCount users.
             |Top players:
             $topUserOverview

@@ -6,6 +6,8 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.CancellationException
 import javax.imageio.ImageIO
+import kotlin.time.Duration
+import kotlin.time.toJavaDuration
 
 object Extensions {
     fun Runnable.logAllExceptions() = Runnable {
@@ -46,6 +48,16 @@ object Extensions {
             ImageIO.write(this, "png", it)
             it
         }.toByteArray().toInputStream()
+
+    fun Duration.formatted() = toJavaDuration().run {
+        listOf(
+            toDays().toInt() to "d",
+            toHoursPart() to "h",
+            toMinutesPart() to "m",
+            toSecondsPart() to "s"
+        ).filterNot { (value, _) -> value == 0 }
+            .joinToString(separator = " ") { (value, label) -> "$value$label" }
+    }
 }
 
 private val logger = KotlinLogging.logger {}
