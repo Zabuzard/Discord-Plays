@@ -1,5 +1,11 @@
 # Discord Plays ![emoji](https://i.imgur.com/Hs2Wohm.png)
 
+
+[![codefactor](https://img.shields.io/codefactor/grade/github/zabuzard/discord-plays)](https://www.codefactor.io/repository/github/zabuzard/discord-plays)
+![Kotlin](https://img.shields.io/badge/Kotlin-1.8.0-ff696c)
+[![license](https://img.shields.io/github/license/Zabuzard/Discord-Plays)](https://github.com/Zabuzard/Discord-Plays/blob/master/LICENSE)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/Zabuzard/Discord-Plays?label=release)
+
 Discord bot to play games together - cause the crowd is just better at it! 🐟🎮
 
 Inspired by Twitch Plays Pokémon. Feel free to contribute or tell us how you like it 🤙
