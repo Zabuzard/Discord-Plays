@@ -7,7 +7,6 @@ import io.github.zabuzard.discordplays.stream.StreamRenderer
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import me.jakejmattson.discordkt.annotations.Service
 import java.awt.image.BufferedImage
 import java.nio.file.Files
 import java.nio.file.Path
@@ -18,7 +17,6 @@ import javax.imageio.ImageIO
 import kotlin.io.path.createDirectories
 import kotlin.io.path.name
 
-@Service
 class FrameRecorder(
     private val config: Config,
     private val streamRenderer: StreamRenderer

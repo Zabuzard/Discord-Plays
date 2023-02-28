@@ -1,24 +1,20 @@
 package io.github.zabuzard.discordplays.discord.commands
 
-import dev.kord.common.entity.Permission.Administrator
-import dev.kord.common.entity.Permissions
+import dev.kord.core.Kord
+import dev.kord.core.behavior.interaction.respondEphemeral
 import dev.kord.core.behavior.interaction.response.respond
+import dev.kord.core.entity.interaction.GuildChatInputCommandInteraction
+import dev.kord.core.entity.interaction.SubCommand
+import dev.kord.core.event.interaction.GuildChatInputCommandInteractionCreateEvent
+import dev.kord.core.on
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
-import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.mentionCommandOrNull
-import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.requireOwnerPermission
+import io.github.zabuzard.discordplays.discord.stats.Statistics
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.local.FrameRecorder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import me.jakejmattson.discordkt.arguments.AnyArg
-import me.jakejmattson.discordkt.arguments.BooleanArg
-import me.jakejmattson.discordkt.arguments.ChoiceArg
-import me.jakejmattson.discordkt.arguments.UserArg
-import me.jakejmattson.discordkt.commands.subcommand
-import me.jakejmattson.discordkt.dsl.edit
-import me.jakejmattson.discordkt.extensions.fullName
 import mu.KotlinLogging
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
@@ -26,259 +22,277 @@ import org.apache.logging.log4j.core.config.Configurator
 import java.nio.file.Path
 import kotlin.io.path.notExists
 
-fun ownerCommands(
+internal const val COMMAND_NAME = "owner"
+internal const val START_SUB_NAME = "start"
+internal const val STOP_SUB_NAME = "stop"
+
+internal const val LOCK_INPUT_SUB_NAME = "lock-input"
+internal const val LOCK_INPUT_SUB_LOCK_OPTION = "lock"
+
+internal const val LOCAL_DISPLAY_SUB_NAME = "local-display"
+internal const val LOCAL_DISPLAY_SUB_ACTIVATE_OPTION = "activate"
+internal const val LOCAL_DISPLAY_SUB_SOUND_OPTION = "sound"
+
+internal const val GLOBAL_MESSAGE_SUB_NAME = "global-message"
+internal const val GLOBAL_MESSAGE_SUB_MESSAGE_OPTION = "message"
+
+internal const val CHAT_MESSAGE_SUB_NAME = "chat-message"
+internal const val CHAT_MESSAGE_SUB_MESSAGE_OPTION = "message"
+
+internal const val ADD_OWNER_SUB_NAME = "add-owner"
+internal const val ADD_OWNER_SUB_USER_OPTION = "user"
+
+internal const val GAME_METADATA_SUB_NAME = "game-metadata"
+internal const val GAME_METADATA_SUB_ENTITY_OPTION = "entity"
+internal const val GAME_METADATA_SUB_VALUE_OPTION = "value"
+
+internal const val BAN_SUB_NAME = "ban"
+internal const val BAN_SUB_USER_OPTION = "user"
+
+internal const val SAVE_SUB_NAME = "save"
+internal const val CLEAR_STATS_SUB_NAME = "clear-stats"
+
+internal const val LOG_LEVEL_SUB_NAME = "log-level"
+internal const val LOG_LEVEL_SUB_LEVEL_OPTION = "level"
+
+internal const val CREATE_VIDEO_SUB_NAME = "create-video"
+internal const val CREATE_VIDEO_SUB_DATE_OPTION = "date"
+
+fun Kord.onOwnerCommands(
     config: Config,
     bot: DiscordBot,
     emulator: Emulator,
-    autoSaver: AutoSaver
-) = subcommand(OWNER_COMMAND_NAME, Permissions(Administrator)) {
-    sub("start", "Starts the game emulation") {
-        execute {
-            if (requireOwnerPermission(config)) return@execute
-
-            val hook = interaction!!.deferEphemeralResponse()
-
-            bot.startGame(discord)
-            discord.kord.editPresence {
-                playing(config.gameTitle)
-                since = Clock.System.now()
-            }
-
-            val streamCommand = guild.mentionCommandOrNull(
-                HOST_COMMAND_NAME,
-                "$HOST_COMMAND_NAME $STREAM_SUBCOMMAND_NAME"
-            )!!
-            hook.respond {
-                content = "Game emulation started. Stream is ready, use $streamCommand to host it."
-            }
+    autoSaver: AutoSaver,
+    statistics: Statistics
+) {
+    on<GuildChatInputCommandInteractionCreateEvent> {
+        val command = interaction.command
+        if (command.rootName != COMMAND_NAME || command !is SubCommand) {
+            return@on
         }
-    }
-
-    sub("stop", "Stops the game emulation") {
-        execute {
-            if (requireOwnerPermission(config)) return@execute
-
-            bot.stopGame()
-            discord.kord.editPresence {}
-
-            respond("Game emulation stopped.")
+        if (interaction.user.id !in config.owners) {
+            interaction.respondEphemeral { content = "Sorry, only owners can use this command." }
+            return@on
         }
-    }
 
-    sub("lock-input", "Only allows user input from owners, blocks any other input") {
-        execute(BooleanArg("lock", description = "true to lock, false to unlock")) {
-            if (requireOwnerPermission(config)) return@execute
-
-            val lock = args.first
-            bot.userInputLockedToOwners = lock
-
-            val actionVerb = if (lock) "Locked" else "Unlocked"
-            respond("$actionVerb user input.")
-        }
-    }
-
-    sub("local-display", "Activates a local display on the bots machine for manual control.") {
-        execute(
-            BooleanArg("activate", description = "true to activate, false to deactivate"),
-            BooleanArg(
-                "sound",
-                description = "true to activate sound, false to deactivate"
-            ).optional(false)
-        ) {
-            if (requireOwnerPermission(config)) return@execute
-
-            val (activate, sound) = args
-            with(bot) {
-                if (activate) activateLocalDisplay(sound) else deactivateLocalDisplay()
-            }
-
-            val activateVerb = if (activate) "Activated" else "Deactivated"
-            val soundVerb = if (sound) "with" else "without"
-            respond("$activateVerb local display $soundVerb sound.")
-        }
-    }
-
-    sub("global-message", "Attaches a global message to the stream") {
-        execute(
-            AnyArg(
-                "message",
-                "leave out to clear any existing message"
-            ).optionalNullable(null)
-        ) {
-            if (requireOwnerPermission(config)) return@execute
-
-            val message = args.first
-            bot.setGlobalMessage(message)
-
-            val actionVerb = if (message == null) "Cleared" else "Set"
-            respond("$actionVerb the global message.")
-        }
-    }
-
-    sub("chat-message", "Sends a message to the chats of all hosts") {
-        execute(
-            AnyArg("message")
-        ) {
-            if (requireOwnerPermission(config)) return@execute
-            val hook = interaction!!.deferEphemeralResponse()
-
-            val message = args.first
-            bot.sendChatMessage(message)
-
-            hook.respond { content = "Send the chat message." }
-        }
-    }
-
-    sub("add-owner", "Give another user owner-permission") {
-        execute(UserArg("user", "who to grant owner-permission")) {
-            if (requireOwnerPermission(config)) return@execute
-
-            val user = args.first
-            config.edit { owners += user.id }
-
-            with("Added ${user.fullName} to the owners.") {
-                logger.info { this }
-                respond(this)
-            }
-        }
-    }
-
-    sub("game-metadata", "Change the metadata of the game played") {
-        execute(
-            ChoiceArg(
-                "entity",
-                "what to modify",
-                *GameMetadataEntity.values().map(GameMetadataEntity::name).toTypedArray()
-            ),
-            AnyArg("value", "the new value for the entity")
-        ) {
-            if (requireOwnerPermission(config)) return@execute
-
-            val (entity, value) = args
-            config.edit {
-                when (GameMetadataEntity.valueOf(entity)) {
-                    GameMetadataEntity.ROM_PATH -> romPath = value
-                    GameMetadataEntity.TITLE -> gameTitle = value
-                }
-            }
-
-            with("Changed metadata $entity to $value") {
-                logger.info { this }
-                respond(this)
-            }
-        }
-    }
-
-    sub("ban", "Bans an user from the event, their input will be blocked") {
-        execute(UserArg("user", "who you want to ban")) {
-            if (requireOwnerPermission(config)) return@execute
-
-            val user = args.first
-            val userId = user.id
-            if (userId in config.owners) {
-                respond("Cannot ban an owner of the event.")
-            }
-
-            config.edit { bannedUsers += userId }
-
-            with("Banned ${user.fullName} from the event.") {
-                logger.info { this }
-                respond(this)
-            }
-        }
-    }
-
-    sub("save", "Starts the auto-save dialog out of its automatic schedule") {
-        execute {
-            if (requireOwnerPermission(config)) return@execute
-
-            val dmChannel = author.getDmChannelOrNull()
-            if (dmChannel == null) {
-                respond("Please open your DMs first.")
-                return@execute
-            }
-
-            logger.info { "Triggered auto-save manually" }
-            respond("Triggered the auto-save routine. Check your DMs.")
-            autoSaveConversation(bot, emulator, autoSaver, author).startPrivately(discord, author)
-        }
-    }
-
-    sub("clear-stats", "Clears all statistics, use when starting a new run") {
-        execute {
-            if (requireOwnerPermission(config)) return@execute
-
-            config.edit {
-                playtimeMs = 0
-                userToInputCount = emptyList()
-            }
-
-            with("Cleared all statistics.") {
-                logger.info { this }
-                respond(this)
-            }
-        }
-    }
-
-    sub("log-level", "Changes the log level") {
-        val levels = Level.values().map { it.name()!! }.toTypedArray()
-        execute(ChoiceArg("level", "the level to set", *levels)) {
-            if (requireOwnerPermission(config)) return@execute
-
-            val level = Level.getLevel(args.first)!!
-            Configurator.setAllLevels(LogManager.getRootLogger().name, level)
-
-            with("Set the log level to $level.") {
-                logger.info { this }
-                respond(this)
-            }
-        }
-    }
-
-    sub("create-video", "Creates a video out of the recorded frames") {
-        execute(AnyArg("date", "to use frames of, e.g. 2023-02-23, also folder name")) {
-            if (requireOwnerPermission(config)) return@execute
-
-            val date = args.first
-
-            val frameFolder = Path.of(config.recordingPath, date)
-            if (frameFolder.notExists()) {
-                respond("Could not find any recordings for $date.")
-                return@execute
-            }
-            respond("Command invoked, video is being created.")
-
-            withContext(Dispatchers.IO) {
-                ProcessBuilder(
-                    "ffmpeg",
-                    "-framerate",
-                    "5",
-                    "-r",
-                    "5",
-                    "-i",
-                    "%d${FrameRecorder.FRAME_SUFFIX}",
-                    "-pix_fmt",
-                    "yuv420p",
-                    "-profile:v",
-                    "high",
-                    "-level:v",
-                    "4.1",
-                    "-crf:v",
-                    "20",
-                    "-movflags",
-                    "+faststart",
-                    "$date.mp4"
-                ).directory(frameFolder.toFile()).start()
+        with(interaction) {
+            when (command.name) {
+                START_SUB_NAME -> onStart(config, bot)
+                STOP_SUB_NAME -> onStop(bot)
+                LOCK_INPUT_SUB_NAME -> onLockInput(bot)
+                LOCAL_DISPLAY_SUB_NAME -> onLocalDisplay(bot)
+                GLOBAL_MESSAGE_SUB_NAME -> onGlobalMessage(bot)
+                CHAT_MESSAGE_SUB_NAME -> onChatMessage(bot)
+                ADD_OWNER_SUB_NAME -> onAddOwner(config)
+                GAME_METADATA_SUB_NAME -> onGameMetadata(config)
+                BAN_SUB_NAME -> onBan(config)
+                SAVE_SUB_NAME -> onSave(bot, emulator, autoSaver)
+                CLEAR_STATS_SUB_NAME -> onClearStats(config, statistics)
+                LOG_LEVEL_SUB_NAME -> onLogLevel()
+                CREATE_VIDEO_SUB_NAME -> onCreateVideo(config)
             }
         }
     }
 }
 
+private suspend fun GuildChatInputCommandInteraction.onStart(
+    config: Config,
+    bot: DiscordBot
+) {
+    val hook = deferEphemeralResponse()
+
+    bot.startGame(kord)
+    kord.editPresence {
+        playing(config.gameTitle)
+        since = Clock.System.now()
+    }
+
+    hook.respond {
+        content = "Game emulation started. Stream is ready."
+    }
+}
+
+private suspend fun GuildChatInputCommandInteraction.onStop(
+    bot: DiscordBot
+) {
+    bot.stopGame()
+    kord.editPresence {}
+
+    respondEphemeral { content = "Game emulation stopped." }
+}
+
+private suspend fun GuildChatInputCommandInteraction.onLockInput(
+    bot: DiscordBot
+) {
+    val lock = command.booleans[LOCK_INPUT_SUB_LOCK_OPTION]!!
+    bot.userInputLockedToOwners = lock
+
+    val actionVerb = if (lock) "Locked" else "Unlocked"
+    respondEphemeral { content = "$actionVerb user input." }
+}
+
+private suspend fun GuildChatInputCommandInteraction.onLocalDisplay(
+    bot: DiscordBot
+) {
+    val activate = command.booleans[LOCAL_DISPLAY_SUB_ACTIVATE_OPTION]!!
+    val sound = command.booleans[LOCAL_DISPLAY_SUB_SOUND_OPTION] ?: false
+
+    with(bot) {
+        if (activate) activateLocalDisplay(sound) else deactivateLocalDisplay()
+    }
+
+    val activateVerb = if (activate) "Activated" else "Deactivated"
+    val soundVerb = if (sound) "with" else "without"
+    respondEphemeral { content = "$activateVerb local display $soundVerb sound." }
+}
+
+private suspend fun GuildChatInputCommandInteraction.onGlobalMessage(
+    bot: DiscordBot
+) {
+    val message = command.strings[GLOBAL_MESSAGE_SUB_MESSAGE_OPTION]
+    bot.setGlobalMessage(message)
+
+    val actionVerb = if (message == null) "Cleared" else "Set"
+    respondEphemeral { content = "$actionVerb the global message." }
+}
+
+private suspend fun GuildChatInputCommandInteraction.onChatMessage(
+    bot: DiscordBot
+) {
+    val hook = deferEphemeralResponse()
+
+    val message = command.strings[CHAT_MESSAGE_SUB_MESSAGE_OPTION]!!
+    bot.sendChatMessage(message)
+
+    hook.respond { content = "Send the chat message." }
+}
+
+private suspend fun GuildChatInputCommandInteraction.onAddOwner(
+    config: Config
+) {
+    val user = command.users[ADD_OWNER_SUB_USER_OPTION]!!
+    config.edit { owners += user.id }
+
+    "Added ${user.username} to the owners.".let {
+        logger.info { it }
+        respondEphemeral { content = it }
+    }
+}
+
+private suspend fun GuildChatInputCommandInteraction.onGameMetadata(
+    config: Config
+) {
+    val entity = command.strings[GAME_METADATA_SUB_ENTITY_OPTION]!!
+    val value = command.strings[GAME_METADATA_SUB_VALUE_OPTION]!!
+
+    config.edit {
+        when (GameMetadataEntity.valueOf(entity)) {
+            GameMetadataEntity.ROM_PATH -> romPath = value
+            GameMetadataEntity.TITLE -> gameTitle = value
+        }
+    }
+
+    "Changed metadata $entity to $value".let {
+        logger.info { it }
+        respondEphemeral { content = it }
+    }
+}
+
+private suspend fun GuildChatInputCommandInteraction.onBan(
+    config: Config
+) {
+    val user = command.users[BAN_SUB_USER_OPTION]!!
+    val userId = user.id
+    if (userId in config.owners) {
+        respondEphemeral { content = "Cannot ban an owner of the event." }
+        return
+    }
+
+    config.edit { bannedUsers += userId }
+
+    "Banned ${user.username} from the event.".let {
+        logger.info { it }
+        respondEphemeral { content = it }
+    }
+}
+
+private suspend fun GuildChatInputCommandInteraction.onSave(
+    bot: DiscordBot,
+    emulator: Emulator,
+    autoSaver: AutoSaver
+) {
+    val dmChannel = user.getDmChannelOrNull()
+    if (dmChannel == null) {
+        respondEphemeral { content = "Please open your DMs first." }
+        return
+    }
+
+    logger.info { "Triggered auto-save manually" }
+    respondEphemeral { content = "Triggered the auto-save routine. Check your DMs." }
+    autoSaveConversation(autoSaver, dmChannel)
+}
+
+private suspend fun GuildChatInputCommandInteraction.onClearStats(
+    config: Config,
+    statistics: Statistics
+) {
+    statistics.clearStats()
+
+    "Cleared all statistics.".let {
+        logger.info { it }
+        respondEphemeral { content = it }
+    }
+}
+
+private suspend fun GuildChatInputCommandInteraction.onLogLevel() {
+    val level = Level.getLevel(command.strings[LOG_LEVEL_SUB_LEVEL_OPTION]!!)!!
+    Configurator.setAllLevels(LogManager.getRootLogger().name, level)
+
+    "Set the log level to $level.".let {
+        logger.info { it }
+        respondEphemeral { content = it }
+    }
+}
+
+private suspend fun GuildChatInputCommandInteraction.onCreateVideo(
+    config: Config
+) {
+    val date = command.strings[CREATE_VIDEO_SUB_DATE_OPTION]!!
+
+    val frameFolder = Path.of(config.recordingPath, date)
+    if (frameFolder.notExists()) {
+        respondEphemeral { content = "Could not find any recordings for $date." }
+        return
+    }
+    respondEphemeral { content = "Command invoked, video is being created." }
+
+    withContext(Dispatchers.IO) {
+        ProcessBuilder(
+            "ffmpeg",
+            "-framerate",
+            "5",
+            "-r",
+            "5",
+            "-i",
+            "%d${FrameRecorder.FRAME_SUFFIX}",
+            "-pix_fmt",
+            "yuv420p",
+            "-profile:v",
+            "high",
+            "-level:v",
+            "4.1",
+            "-crf:v",
+            "20",
+            "-movflags",
+            "+faststart",
+            "$date.mp4"
+        ).directory(frameFolder.toFile()).start()
+    }
+}
+
 private val logger = KotlinLogging.logger {}
 
-const val OWNER_COMMAND_NAME = "owner"
-
-private enum class GameMetadataEntity {
+internal enum class GameMetadataEntity {
     ROM_PATH,
     TITLE
 }

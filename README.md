@@ -74,9 +74,6 @@ optionally even with sound. The controls are:
 
 ### Overview
 
-A table of all commands can be
-seen [here](https://github.com/Zabuzard/Discord-Plays/blob/master/commands.md).
-
 The permission system is divided into 3 roles:
 
 * Owner - responsible for the event, full access, that's you
@@ -154,7 +151,7 @@ The main technologies being used are
 
 * Kotlin
 * Gradle
-* [DiscordKt](https://github.com/DiscordKt/DiscordKt) as Discord framework
+* [Kord](https://github.com/kordlib/kord) as Discord framework
 * [Coffee GB](https://github.com/trekawek/coffee-gb) as emulator
 
 ### Architecture

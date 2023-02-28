@@ -7,12 +7,10 @@ import eu.rekawek.coffeegb.memory.cart.Cartridge
 import eu.rekawek.coffeegb.serial.SerialEndpoint
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
-import me.jakejmattson.discordkt.annotations.Service
 import java.awt.Graphics
 import java.io.File
 import java.util.concurrent.Executors
 
-@Service
 class Emulator(
     private val config: Config
 ) {

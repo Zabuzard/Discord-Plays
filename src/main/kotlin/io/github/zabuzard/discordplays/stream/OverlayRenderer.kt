@@ -10,7 +10,6 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
-import me.jakejmattson.discordkt.annotations.Service
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics2D
@@ -22,7 +21,6 @@ import kotlin.random.Random
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-@Service
 class OverlayRenderer(
     private val config: Config
 ) {

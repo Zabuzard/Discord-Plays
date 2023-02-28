@@ -1,24 +1,25 @@
 package io.github.zabuzard.discordplays.discord.commands
 
 import dev.kord.common.entity.ButtonStyle
+import dev.kord.common.entity.DiscordPartialEmoji
+import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.interaction.respondEphemeral
+import dev.kord.core.entity.interaction.GuildChatInputCommandInteraction
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
+import dev.kord.core.on
 import dev.kord.rest.builder.component.ActionRowBuilder
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.x.emoji.Emojis
+import dev.kord.x.emoji.toReaction
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.UserInput
 import kotlinx.datetime.Clock
-import me.jakejmattson.discordkt.commands.GuildSlashCommandEvent
-import me.jakejmattson.discordkt.dsl.listeners
-import me.jakejmattson.discordkt.extensions.button
-import me.jakejmattson.discordkt.extensions.toPartialEmoji
-import me.jakejmattson.discordkt.extensions.uuid
+import java.util.*
 
 object InputMenu {
-    suspend fun GuildSlashCommandEvent<*>.createInputMenu(bot: DiscordBot) =
+    suspend fun GuildChatInputCommandInteraction.createInputMenu(bot: DiscordBot) =
         channel.createMessage {
             actionRow {
                 controlButton(Button.A)
@@ -38,17 +39,20 @@ object InputMenu {
         }
 
     private fun ActionRowBuilder.controlButton(button: Button) {
-        val id = "$CONTROL_BUTTON_ID_PREFIX-${button.name}-${uuid()}"
+        val id = "$CONTROL_BUTTON_ID_PREFIX-${button.name}-${UUID.randomUUID()}"
         interactionButton(ButtonStyle.Secondary, id) {
-            emoji = button.toEmoji().toPartialEmoji()
+            emoji = DiscordPartialEmoji(name = button.toEmoji().toReaction().name)
         }
     }
 
     private fun ActionRowBuilder.fakeButton() =
-        button(INVISIBLE_WHITESPACE, null, disabled = true) {}
+        interactionButton(ButtonStyle.Secondary, "fake") {
+            label = INVISIBLE_WHITESPACE
+            disabled = true
+        }
 }
 
-fun onControlButtonClicked(bot: DiscordBot) = listeners {
+fun Kord.onControlButtonClicked(bot: DiscordBot) {
     on<ButtonInteractionCreateEvent> {
         with(interaction) {
             val buttonId = component.data.customId.value ?: ""

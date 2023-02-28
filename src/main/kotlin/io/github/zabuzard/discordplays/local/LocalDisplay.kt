@@ -6,7 +6,6 @@ import io.github.zabuzard.discordplays.stream.STREAM_HEIGHT
 import io.github.zabuzard.discordplays.stream.STREAM_WIDTH
 import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
-import me.jakejmattson.discordkt.annotations.Service
 import java.awt.BorderLayout
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
@@ -18,7 +17,6 @@ import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.WindowConstants
 
-@Service
 class LocalDisplay(
     private val streamRenderer: StreamRenderer,
     private val emulator: Emulator

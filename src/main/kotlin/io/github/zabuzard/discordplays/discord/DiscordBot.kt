@@ -2,6 +2,7 @@ package io.github.zabuzard.discordplays.discord
 
 import com.sksamuel.aedile.core.caffeineBuilder
 import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.behavior.edit
 import dev.kord.core.entity.Guild
@@ -29,11 +30,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import me.jakejmattson.discordkt.Discord
-import me.jakejmattson.discordkt.annotations.Service
-import me.jakejmattson.discordkt.dsl.edit
-import me.jakejmattson.discordkt.extensions.author
-import me.jakejmattson.discordkt.extensions.fullName
 import mu.KotlinLogging
 import mu.withLoggingContext
 import java.awt.image.BufferedImage
@@ -41,7 +37,6 @@ import java.io.InputStream
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-@Service
 class DiscordBot(
     private val config: Config,
     private val emulator: Emulator,
@@ -78,15 +73,15 @@ class DiscordBot(
         statistics.addStatisticsConsumer(this)
     }
 
-    suspend fun startGame(discord: Discord) {
+    suspend fun startGame(kord: Kord) {
         logger.info { "Starting game" }
         userInputLockedToOwners = true
-        loadHosts(discord)
+        loadHosts(kord)
 
         emulator.start()
         streamRenderer.start()
         statistics.onGameResumed()
-        autoSaver.start(this, emulator, discord)
+        autoSaver.start(this, emulator, kord)
         frameRecorder.start()
         gameCurrentlyRunning = true
     }
@@ -126,7 +121,7 @@ class DiscordBot(
 
     suspend fun onUserInput(input: UserInput): UserInputResult {
         val userId = input.user.id
-        val userName = input.user.fullName
+        val userName = input.user.username
 
         if (userInputLockedToOwners && userId !in config.owners) {
             logger.debug { withLoggingContext("user" to userName) { "Blocked user input ($userName), locked to owner" } }
@@ -178,7 +173,13 @@ class DiscordBot(
 
             val guild = message.author.getGuild().name
             it.chatDescriptionMessage.getChannel().createEmbed {
-                author(message.author)
+                message.author.let {
+                    author {
+                        name = it.displayName
+                        icon = it.avatar?.url ?: it.defaultAvatar.url
+                        url = "https://discord.com/users/${it.id.value}/"
+                    }
+                }
                 description = message.content
                 footer { text = "from $guild" }
             }
@@ -296,8 +297,8 @@ class DiscordBot(
         config.edit { hosts = guildToHost.values.map(Host::toHostId).toSet() }
     }
 
-    private suspend fun loadHosts(discord: Discord) {
-        guildToHost = config.hosts.mapNotNull { it.toHost(discord) }.associateBy { it.guild }
+    private suspend fun loadHosts(kord: Kord) {
+        guildToHost = config.hosts.mapNotNull { it.toHost(kord) }.associateBy { it.guild }
         saveHosts()
     }
 

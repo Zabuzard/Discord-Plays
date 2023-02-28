@@ -20,7 +20,8 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.20.0")
     implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.20.0")
 
-    implementation("me.jakejmattson:DiscordKt:0.23.4")
+    implementation("dev.kord:kord-core:0.8.0-M17")
+    implementation("dev.kord.x:emoji:0.5.0")
     implementation("com.github.trekawek:coffee-gb:master-SNAPSHOT")
     implementation("com.sksamuel.aedile:aedile-core:1.2.0")
 

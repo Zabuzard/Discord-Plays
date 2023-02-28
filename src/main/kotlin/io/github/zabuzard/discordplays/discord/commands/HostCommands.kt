@@ -1,72 +1,84 @@
 package io.github.zabuzard.discordplays.discord.commands
 
 import dev.kord.common.entity.ArchiveDuration
-import dev.kord.common.entity.Permission.ModerateMembers
-import dev.kord.common.entity.Permissions
+import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.asChannelOf
 import dev.kord.core.behavior.edit
+import dev.kord.core.behavior.interaction.respondEphemeral
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.TextChannel
+import dev.kord.core.entity.interaction.GuildChatInputCommandInteraction
+import dev.kord.core.entity.interaction.SubCommand
+import dev.kord.core.event.interaction.GuildChatInputCommandInteractionCreateEvent
+import dev.kord.core.on
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.Host
 import io.github.zabuzard.discordplays.discord.commands.InputMenu.createInputMenu
-import me.jakejmattson.discordkt.arguments.AnyArg
-import me.jakejmattson.discordkt.commands.GuildSlashCommandEvent
-import me.jakejmattson.discordkt.commands.subcommand
+import io.ktor.client.request.forms.ChannelProvider
+import io.ktor.util.cio.toByteReadChannel
 
-fun hostCommands(
+internal const val HOST_COMMAND_NAME = "host"
+internal const val STREAM_SUB_NAME = "stream"
+internal const val COMMUNITY_MESSAGE_SUB_NAME = "community-message"
+internal const val COMMUNITY_MESSAGE_SUB_MESSAGE_OPTION = "message"
+
+fun Kord.onHostCommands(
     config: Config,
     bot: DiscordBot
-) = subcommand(HOST_COMMAND_NAME, Permissions(ModerateMembers)) {
-    sub(STREAM_SUBCOMMAND_NAME, "Starts your game stream in this channel") {
-        execute {
-            respond(
-                """
-                Starting to host the stream in this channel.
-                To stop the stream, just delete the message that contains it.
-                """.trimIndent()
-            )
-
-            val streamMessage = createInputMenu(bot)
-
-            streamMessage.edit {
-                val coverImage =
-                    if (bot.gameCurrentlyRunning) DiscordBot.STARTING_SOON_COVER_RESOURCE else DiscordBot.OFFLINE_COVER_RESOURCE
-                addFile("stream.png", javaClass.getResourceAsStream(coverImage)!!)
-            }
-
-            val chatDescriptionMessage = createChat(streamMessage, config).also { it.pin() }
-
-            bot.addHost(Host(guild, streamMessage, chatDescriptionMessage))
+) {
+    on<GuildChatInputCommandInteractionCreateEvent> {
+        val command = interaction.command
+        if (command.rootName != HOST_COMMAND_NAME || command !is SubCommand) {
+            return@on
         }
-    }
-
-    sub(
-        "community-message",
-        "Attaches a community-wide message to the stream hosted in this channel"
-    ) {
-        execute(
-            AnyArg(
-                "message",
-                "leave out to clear any existing message"
-            ).optionalNullable(null)
-        ) {
-            val message = args.first
-            with(bot) {
-                setCommunityMessage(guild, message)
+        with(interaction) {
+            when (command.name) {
+                STREAM_SUB_NAME -> onStream(config, bot)
+                COMMUNITY_MESSAGE_SUB_NAME -> onCommunityMessage(bot)
             }
-
-            val actionVerb = if (message == null) "Cleared" else "Set"
-            respond("$actionVerb the community message.")
         }
     }
 }
 
-const val HOST_COMMAND_NAME = "host"
-const val STREAM_SUBCOMMAND_NAME = "stream"
+private suspend fun GuildChatInputCommandInteraction.onStream(
+    config: Config,
+    bot: DiscordBot
+) {
+    respondEphemeral {
+        content = """
+                |Starting to host the stream in this channel.
+                |To stop the stream, just delete the message that contains it.
+        """.trimMargin()
+    }
 
-private suspend fun GuildSlashCommandEvent<*>.createChat(
+    val streamMessage = createInputMenu(bot)
+
+    streamMessage.edit {
+        val coverImage =
+            if (bot.gameCurrentlyRunning) DiscordBot.STARTING_SOON_COVER_RESOURCE else DiscordBot.OFFLINE_COVER_RESOURCE
+        addFile(
+            "stream.png",
+            ChannelProvider { javaClass.getResourceAsStream(coverImage)!!.toByteReadChannel() }
+        )
+    }
+
+    val chatDescriptionMessage = createChat(streamMessage, config).also { it.pin() }
+
+    bot.addHost(Host(getGuild(), streamMessage, chatDescriptionMessage))
+}
+
+private suspend fun GuildChatInputCommandInteraction.onCommunityMessage(
+    bot: DiscordBot
+) {
+    val message = command.strings[COMMUNITY_MESSAGE_SUB_MESSAGE_OPTION]
+    bot.setCommunityMessage(getGuild(), message)
+
+    val actionVerb = if (message == null) "Cleared" else "Set"
+    respondEphemeral { content = "$actionVerb the community message." }
+}
+
+private suspend fun GuildChatInputCommandInteraction.createChat(
     rootMessage: Message,
     config: Config
 ) =

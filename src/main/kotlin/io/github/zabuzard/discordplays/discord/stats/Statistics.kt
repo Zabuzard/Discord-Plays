@@ -13,15 +13,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import me.jakejmattson.discordkt.annotations.Service
-import me.jakejmattson.discordkt.dsl.edit
 import mu.KotlinLogging
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
 @OptIn(DelicateCoroutinesApi::class)
-@Service
 class Statistics(private val config: Config) {
     private var consumers = emptyList<StatisticsConsumer>()
 
@@ -71,8 +68,18 @@ class Statistics(private val config: Config) {
             userToInputCount[it] = (userToInputCount[it] ?: 0) + 1
             userToName[it] = userInput.user.username
         }
-        
+
         totalInputCount++
+    }
+
+    fun clearStats() {
+        userToInputCount.clear()
+        totalInputCount = 0
+
+        config.edit {
+            playtimeMs = 0
+            userToInputCount = emptyList()
+        }
     }
 
     private suspend fun computeStats() {

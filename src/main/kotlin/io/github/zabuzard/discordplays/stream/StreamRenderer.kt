@@ -13,13 +13,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import me.jakejmattson.discordkt.annotations.Service
 import mu.KotlinLogging
 import java.awt.image.BufferedImage
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.milliseconds
 
-@Service
 class StreamRenderer(
     private val config: Config,
     private val emulator: Emulator,
