@@ -11,15 +11,15 @@ fun onChatMessage(
     bot: DiscordBot
 ) = listeners {
     on<MessageCreateEvent> {
-        val host = config.hosts.find { it.chatDescriptionMessageId.channelId == message.channelId }
-            ?: return@on
-
         if (message.author?.isBot == true) {
             return@on
         }
         if (message.author?.id in config.bannedUsers) {
             return@on
         }
+
+        val host = config.hosts.find { it.chatDescriptionMessageId.channelId == message.channelId }
+            ?: return@on
 
         bot.onChatMessage(message.toChatMessage(host.guildId))
     }
