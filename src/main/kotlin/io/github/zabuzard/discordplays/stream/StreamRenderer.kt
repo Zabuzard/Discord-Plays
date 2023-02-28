@@ -6,16 +6,16 @@ import io.github.zabuzard.discordplays.discord.gif.Gif
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.BannerRendering.Placement
 import io.github.zabuzard.discordplays.stream.BannerRendering.renderBanner
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import me.jakejmattson.discordkt.annotations.Service
 import mu.KotlinLogging
 import java.awt.image.BufferedImage
-import java.util.concurrent.CancellationException
-import java.util.concurrent.Executors
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -27,7 +27,6 @@ class StreamRenderer(
 ) {
     private var consumers = emptyList<StreamConsumer>()
 
-    private val renderService = Executors.newSingleThreadScheduledExecutor()
     private var renderJob: Job? = null
 
     private var gif: Gif = Gif(gifFrameRate)
@@ -42,15 +41,10 @@ class StreamRenderer(
         consumers -= consumer
     }
 
-    suspend fun start() {
+    @OptIn(DelicateCoroutinesApi::class)
+    fun start() {
         require(renderJob == null) { "Cannot start, job is already running" }
-        renderService.submit(
-            {
-                runBlocking {
-                    renderJob = launch { renderStream() }
-                }
-            }.logAllExceptions()
-        )
+        renderJob = GlobalScope.launch(logAllExceptions) { renderStream() }
     }
 
     fun stop() {
@@ -62,23 +56,25 @@ class StreamRenderer(
 
     private suspend fun renderStream() {
         while (coroutineContext.isActive) {
-            try {
-                val frame = renderFrame()
-                consumers.forEach({ consumer: StreamConsumer -> consumer.acceptFrame(frame) }.logAllExceptions())
+            logAllExceptions {
+                coroutineScope {
+                    val frame = renderFrame()
+                    consumers.forEach {
+                        launch(logAllExceptions) { it.acceptFrame(frame) }
+                    }
 
-                gif += frame
-                if (gif.size >= FLUSH_GIF_AT_FRAMES) {
-                    val rawGif = gif.endSequence()
-                    consumers.forEach({ consumer: StreamConsumer -> consumer.acceptGif(rawGif) }.logAllExceptions())
+                    gif += frame
+                    if (gif.size >= FLUSH_GIF_AT_FRAMES) {
+                        val rawGif = gif.endSequence()
+                        consumers.forEach {
+                            launch(logAllExceptions) { it.acceptGif(rawGif) }
+                        }
 
-                    gif = Gif(gifFrameRate)
+                        gif = Gif(gifFrameRate)
+                    }
                 }
 
                 delay(renderFrameRate)
-            } catch (e: Exception) {
-                if (e !is CancellationException) {
-                    logger.error(e) { "Unknown error" }
-                }
             }
         }
     }
@@ -92,7 +88,16 @@ class StreamRenderer(
             val g = createGraphics()
             emulator.render(g, EMULATOR_SCALING_FACTOR)
 
-            globalMessage?.let { renderBanner(it, g, config.font, SCREEN_WIDTH, SCREEN_HEIGHT, Placement.TOP) }
+            globalMessage?.let {
+                renderBanner(
+                    it,
+                    g,
+                    config.font,
+                    SCREEN_WIDTH,
+                    SCREEN_HEIGHT,
+                    Placement.TOP
+                )
+            }
 
             // Right side
             g.translate(SCREEN_WIDTH, 0)

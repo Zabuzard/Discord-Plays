@@ -249,7 +249,7 @@ fun ownerCommands(
             respond("Command invoked, video is being created.")
 
             withContext(Dispatchers.IO) {
-                val process = ProcessBuilder(
+                ProcessBuilder(
                     "ffmpeg",
                     "-framerate",
                     "5",

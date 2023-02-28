@@ -1,6 +1,6 @@
 package io.github.zabuzard.discordplays
 
-import io.github.zabuzard.discordplays.Extensions.toInputStream
+import kotlinx.coroutines.CoroutineExceptionHandler
 import mu.KotlinLogging
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
@@ -11,6 +11,12 @@ import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
 object Extensions {
+    val logAllExceptions = CoroutineExceptionHandler { _, e ->
+        if (e !is CancellationException) {
+            logger.error(e) { UNKNOWN_ERROR_MESSAGE }
+        }
+    }
+
     fun Runnable.logAllExceptions() = Runnable {
         try {
             this@logAllExceptions.run()
@@ -34,6 +40,16 @@ object Extensions {
     fun <T> ((T) -> Unit).logAllExceptions(): ((T) -> Unit) = {
         try {
             this.invoke(it)
+        } catch (e: Throwable) {
+            if (e !is CancellationException) {
+                logger.error(e) { UNKNOWN_ERROR_MESSAGE }
+            }
+        }
+    }
+
+    suspend fun logAllExceptions(action: suspend () -> Unit) {
+        try {
+            action()
         } catch (e: Throwable) {
             if (e !is CancellationException) {
                 logger.error(e) { UNKNOWN_ERROR_MESSAGE }

@@ -4,12 +4,14 @@ import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import me.jakejmattson.discordkt.annotations.Service
 import java.awt.image.BufferedImage
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDate
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import javax.imageio.ImageIO
@@ -23,7 +25,6 @@ class FrameRecorder(
 ) : StreamConsumer {
     private var skipFrameCount = AtomicInteger(SKIP_FRAMES)
     private var nextFrameId = AtomicLong(0)
-    private val service = Executors.newSingleThreadExecutor()
     private var previousFrameDate: LocalDate? = null
 
     fun start() {
@@ -34,19 +35,16 @@ class FrameRecorder(
         streamRenderer.removeStreamConsumer(this)
     }
 
-    override fun acceptFrame(frame: BufferedImage) {
+    @OptIn(DelicateCoroutinesApi::class)
+    override suspend fun acceptFrame(frame: BufferedImage) {
         if (skipFrameCount.getAndDecrement() == 0) {
-            service.submit(
-                {
-                    recordFrame(frame)
-                }.logAllExceptions()
-            )
+            GlobalScope.launch(logAllExceptions) { recordFrame(frame) }
 
             skipFrameCount.set(SKIP_FRAMES)
         }
     }
 
-    override fun acceptGif(gif: ByteArray) {
+    override suspend fun acceptGif(gif: ByteArray) {
         // Only interested in frames
     }
 

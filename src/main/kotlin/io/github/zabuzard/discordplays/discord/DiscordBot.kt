@@ -8,6 +8,7 @@ import dev.kord.core.entity.Guild
 import dev.kord.rest.builder.message.modify.embed
 import dev.kord.rest.request.KtorRequestException
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.Extensions.toByteArray
 import io.github.zabuzard.discordplays.Extensions.toInputStream
 import io.github.zabuzard.discordplays.discord.commands.AutoSaver
@@ -24,8 +25,8 @@ import io.github.zabuzard.discordplays.stream.SCREEN_HEIGHT
 import io.github.zabuzard.discordplays.stream.SCREEN_WIDTH
 import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import me.jakejmattson.discordkt.Discord
@@ -90,7 +91,7 @@ class DiscordBot(
         gameCurrentlyRunning = true
     }
 
-    fun stopGame() {
+    suspend fun stopGame() {
         logger.info { "Stopping game" }
         emulator.stop()
         streamRenderer.stop()
@@ -167,7 +168,7 @@ class DiscordBot(
         }
     }
 
-    fun onChatMessage(message: ChatMessage) {
+    suspend fun onChatMessage(message: ChatMessage) {
         overlayRenderer.recordChatMessage(message)
 
         forAllHosts {
@@ -175,10 +176,11 @@ class DiscordBot(
                 return@forAllHosts
             }
 
-            it.chatDescriptionMessage.channel.createEmbed {
+            val guild = message.author.getGuild().name
+            it.chatDescriptionMessage.getChannel().createEmbed {
                 author(message.author)
                 description = message.content
-                footer { text = "from ${message.author.getGuild().name}" }
+                footer { text = "from $guild" }
             }
         }
     }
@@ -207,7 +209,7 @@ class DiscordBot(
         }
     }
 
-    fun sendChatMessage(message: String) {
+    suspend fun sendChatMessage(message: String) {
         logger.info { "Sending chat message: $message" }
         forAllHosts {
             it.chatDescriptionMessage.channel.createMessage(message).pin()
@@ -234,11 +236,11 @@ class DiscordBot(
         }
     }
 
-    override fun acceptFrame(frame: BufferedImage) {
+    override suspend fun acceptFrame(frame: BufferedImage) {
         lastFrame = frame
     }
 
-    override fun acceptGif(gif: ByteArray) {
+    override suspend fun acceptGif(gif: ByteArray) {
         if (Clock.System.now() - lastUserInputAt > pauseAfterNoInputFor) {
             if (!isPaused) {
                 logger.info { "Pausing game due to inactivity" }
@@ -266,10 +268,10 @@ class DiscordBot(
         sendStreamFile("image.gif") { gif.toInputStream() }
     }
 
-    private fun sendOfflineImage() =
+    private suspend fun sendOfflineImage() =
         sendStreamFile("stream.png") { javaClass.getResourceAsStream(OFFLINE_COVER_RESOURCE)!! }
 
-    private fun sendStreamFile(name: String, dataProducer: () -> InputStream) {
+    private suspend fun sendStreamFile(name: String, dataProducer: () -> InputStream) {
         forAllHosts {
             it.streamMessage.edit {
                 files?.clear()
@@ -278,7 +280,7 @@ class DiscordBot(
         }
     }
 
-    override fun acceptStatistics(stats: String) {
+    override suspend fun acceptStatistics(stats: String) {
         forAllHosts {
             it.chatDescriptionMessage.edit {
                 embeds?.clear()
@@ -299,12 +301,12 @@ class DiscordBot(
         saveHosts()
     }
 
-    private fun forAllHosts(consumer: suspend (Host) -> Unit) {
-        runBlocking {
+    private suspend fun forAllHosts(consumer: suspend (Host) -> Unit) {
+        coroutineScope {
             guildToHost.values.forEach {
-                launch {
+                launch(logAllExceptions) {
                     try {
-                        consumer.invoke(it)
+                        consumer(it)
                     } catch (e: KtorRequestException) {
                         if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
                             removeHost(it)

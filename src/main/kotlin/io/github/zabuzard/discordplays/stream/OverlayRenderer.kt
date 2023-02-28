@@ -27,7 +27,7 @@ class OverlayRenderer(
     private val config: Config
 ) {
     private val inputHistory: MutableList<UserInput> = ArrayDeque()
-    private val chatHistory: MutableList<ChatMessage> = Collections.synchronizedList(ArrayDeque())
+    private val chatHistory: MutableList<ChatMessage> = ArrayDeque()
 
     private val inputTextFont = Font(config.font, Font.BOLD, 13)
     private val chatNameFont = Font(config.font, Font.BOLD, 10)

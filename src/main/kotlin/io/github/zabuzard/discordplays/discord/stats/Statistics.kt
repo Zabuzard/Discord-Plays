@@ -5,19 +5,25 @@ import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.Extensions.formatted
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.UserInput
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import me.jakejmattson.discordkt.annotations.Service
 import me.jakejmattson.discordkt.dsl.edit
 import mu.KotlinLogging
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
+@OptIn(DelicateCoroutinesApi::class)
 @Service
 class Statistics(private val config: Config) {
     private var consumers = emptyList<StatisticsConsumer>()
-    private val statsService = Executors.newSingleThreadScheduledExecutor()
 
     private var gameActiveLastHeartbeat: Instant? = null
     private val userToInputCount: MutableMap<Snowflake, Int>
@@ -30,12 +36,7 @@ class Statistics(private val config: Config) {
             config.userToInputCount.associate { (user, _) -> user.id to user.name }.toMutableMap()
         totalInputCount = config.userToInputCount.sumOf { it.second }
 
-        statsService.scheduleAtFixedRate(
-            this::computeStats.logAllExceptions(),
-            1,
-            1,
-            TimeUnit.MINUTES
-        )
+        GlobalScope.launch(logAllExceptions) { computeStats() }
     }
 
     fun addStatisticsConsumer(consumer: StatisticsConsumer) {
@@ -66,51 +67,58 @@ class Statistics(private val config: Config) {
     }
 
     fun onUserInput(userInput: UserInput) {
-        synchronized(this) {
-            userInput.user.id.let {
-                userToInputCount[it] = (userToInputCount[it] ?: 0) + 1
-                userToName[it] = userInput.user.username
-            }
+        userInput.user.id.let {
+            userToInputCount[it] = (userToInputCount[it] ?: 0) + 1
+            userToName[it] = userInput.user.username
         }
+        
         totalInputCount++
     }
 
-    private fun computeStats() {
-        val uniqueUserCount = userToInputCount.size
+    private suspend fun computeStats() {
+        while (coroutineContext.isActive) {
+            logAllExceptions {
+                coroutineScope {
+                    val uniqueUserCount = userToInputCount.size
 
-        val userIdToInputSorted: List<Pair<Snowflake, Int>>
-        synchronized(this) {
-            userIdToInputSorted =
-                userToInputCount.filterNot { (id, _) -> id in config.bannedUsers }
-                    .toList().sortedByDescending { it.second }
+                    val userIdToInputSorted =
+                        userToInputCount.filterNot { (id, _) -> id in config.bannedUsers }
+                            .toList().sortedByDescending { it.second }
 
-            config.edit {
-                userToInputCount = this@Statistics.userToInputCount.mapKeys { (id, _) ->
-                    UserSnapshot(id, userToName[id]!!)
-                }.toList()
+                    config.edit {
+                        userToInputCount = this@Statistics.userToInputCount.mapKeys { (id, _) ->
+                            UserSnapshot(id, userToName[id]!!)
+                        }.toList()
 
-                gameActiveLastHeartbeat?.let {
-                    val now = Clock.System.now()
-                    val playtimeSinceLastHeartbeat = now - it
-                    gameActiveLastHeartbeat = now
-                    playtimeMs += playtimeSinceLastHeartbeat.inWholeMilliseconds
+                        gameActiveLastHeartbeat?.let {
+                            val now = Clock.System.now()
+                            val playtimeSinceLastHeartbeat = now - it
+                            gameActiveLastHeartbeat = now
+                            playtimeMs += playtimeSinceLastHeartbeat.inWholeMilliseconds
+                        }
+                    }
+
+                    val topUserOverview =
+                        userIdToInputSorted.take(20).joinToString("\n") { (id, inputCount) ->
+                            "|* ${userToName[id]} - $inputCount"
+                        }
+
+                    val stats = """
+                    |Playtime: ${config.playtimeMs.milliseconds.formatted()}
+                    |Received $totalInputCount inputs by $uniqueUserCount users.
+                    |Top players:
+                    $topUserOverview
+                    """.trimMargin()
+
+                    logger.info { "Sending statistics update" }
+                    consumers.forEach {
+                        launch(logAllExceptions) { it.acceptStatistics(stats) }
+                    }
+
+                    delay(1.minutes)
                 }
             }
         }
-
-        val topUserOverview = userIdToInputSorted.take(20).joinToString("\n") { (id, inputCount) ->
-            "|* ${userToName[id]} - $inputCount"
-        }
-
-        val stats = """
-            |Playtime: ${config.playtimeMs.milliseconds.formatted()}
-            |Received $totalInputCount inputs by $uniqueUserCount users.
-            |Top players:
-            $topUserOverview
-        """.trimMargin()
-
-        logger.info { "Sending statistics update" }
-        consumers.forEach({ consumer: StatisticsConsumer -> consumer.acceptStatistics(stats) }.logAllExceptions())
     }
 }
 

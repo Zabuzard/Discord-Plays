@@ -14,11 +14,13 @@ import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.Instant
@@ -38,8 +40,6 @@ import me.jakejmattson.discordkt.extensions.fullName
 import me.jakejmattson.discordkt.extensions.toPartialEmoji
 import mu.KotlinLogging
 import java.awt.image.BufferedImage
-import java.util.concurrent.CancellationException
-import java.util.concurrent.Executors
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -204,7 +204,6 @@ class AutoSaver(
     private val config: Config,
     streamRenderer: StreamRenderer
 ) : StreamConsumer {
-    private val routineService = Executors.newSingleThreadExecutor()
     private var routineJob: Job? = null
     internal lateinit var lastFrame: BufferedImage
 
@@ -212,14 +211,9 @@ class AutoSaver(
         streamRenderer.addStreamConsumer(this)
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     fun start(bot: DiscordBot, emulator: Emulator, discord: Discord) {
-        routineService.submit(
-            {
-                runBlocking {
-                    routineJob = launch { runRoutine(bot, emulator, discord) }
-                }
-            }.logAllExceptions()
-        )
+        routineJob = GlobalScope.launch(logAllExceptions) { runRoutine(bot, emulator, discord) }
     }
 
     fun stop() {
@@ -228,29 +222,31 @@ class AutoSaver(
     }
 
     private suspend fun runRoutine(bot: DiscordBot, emulator: Emulator, discord: Discord) {
+        val autoSaver = this
         while (coroutineContext.isActive) {
-            try {
-                val remindIn = Clock.System.now().untilNext(config.autoSaveRemindAt) + 1.minutes
-                logger.info { "Reminding to save in: $remindIn" }
-                delay(remindIn)
+            coroutineScope {
+                logAllExceptions {
+                    val remindIn = Clock.System.now().untilNext(config.autoSaveRemindAt) + 1.minutes
+                    logger.info { "Reminding to save in: $remindIn" }
+                    delay(remindIn)
 
-                logger.info { "Reminding to save" }
-                config.owners.mapNotNull { discord.kord.getUser(it) }.forEach {
-                    autoSaveConversation(bot, emulator, this, it).startPrivately(discord, it)
-                }
-            } catch (e: Exception) {
-                if (e !is CancellationException) {
-                    logger.error(e) { "Unknown error" }
+                    logger.info { "Reminding to save" }
+                    config.owners.mapNotNull { discord.kord.getUser(it) }.forEach {
+                        launch(logAllExceptions) {
+                            autoSaveConversation(bot, emulator, autoSaver, it)
+                                .startPrivately(discord, it)
+                        }
+                    }
                 }
             }
         }
     }
 
-    override fun acceptFrame(frame: BufferedImage) {
+    override suspend fun acceptFrame(frame: BufferedImage) {
         lastFrame = frame
     }
 
-    override fun acceptGif(gif: ByteArray) {
+    override suspend fun acceptGif(gif: ByteArray) {
         // Only interested in frames
     }
 }
