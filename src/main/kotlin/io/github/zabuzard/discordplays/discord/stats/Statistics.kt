@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import mu.KotlinLogging
+import java.util.*
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -24,9 +25,9 @@ class Statistics(private val config: Config) {
     private var consumers = emptyList<StatisticsConsumer>()
 
     private var gameActiveLastHeartbeat: Instant? = null
-    private val userToInputCount: MutableMap<Snowflake, Int>
+    private val userToInputCount: MutableMap<Snowflake, Long>
     private val userToName: MutableMap<Snowflake, String>
-    private var totalInputCount: Int
+    private var totalInputCount: Long
 
     init {
         userToInputCount = config.userToInputCount.toMap().mapKeys { it.key.id }.toMutableMap()
@@ -119,12 +120,12 @@ class Statistics(private val config: Config) {
 
         val topUserOverview =
             userIdToInputSorted.take(20).joinToString("\n") { (id, inputCount) ->
-                "|* ${userToName[id]} - $inputCount"
+                "|* ${userToName[id]} - ${inputCount.formatted()}"
             }
 
         val stats = """
             |Playtime: ${config.playtimeMs.milliseconds.formatted()}
-            |Received $totalInputCount inputs by $uniqueUserCount users.
+            |Received ${totalInputCount.formatted()} inputs by ${uniqueUserCount.formatted()} users from ${config.hosts.size} communities.
             |Top players:
              $topUserOverview
         """.trimMargin()
@@ -139,3 +140,13 @@ class Statistics(private val config: Config) {
 }
 
 private val logger = KotlinLogging.logger {}
+
+private fun Long.formatted() = when (this) {
+    in 0 until 1_000 -> toString()
+    in 1_000 until 10_000 -> "%,.2fk".format(Locale.ENGLISH, this / 1_000.0)
+    in 10_000 until 100_000 -> "%,.1fk".format(Locale.ENGLISH, this / 1_000.0)
+    in 100_000 until 1_000_000 -> "${this / 1_000}k"
+    else -> "%,.2fM".format(Locale.ENGLISH, this / 1_000_000.0)
+}
+
+private fun Int.formatted() = toLong().formatted()
