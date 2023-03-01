@@ -1,4 +1,4 @@
-# Discord Plays ![emoji](https://i.imgur.com/Hs2Wohm.png)
+# ![banner](https://i.imgur.com/xpLZfGY.png)
 
 [![codefactor](https://img.shields.io/codefactor/grade/github/zabuzard/discord-plays)](https://www.codefactor.io/repository/github/zabuzard/discord-plays)
 ![Kotlin](https://img.shields.io/badge/Kotlin-1.8.0-ff696c)
