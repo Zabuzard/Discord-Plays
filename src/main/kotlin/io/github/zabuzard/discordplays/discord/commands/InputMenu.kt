@@ -18,7 +18,7 @@ import kotlinx.datetime.Clock
 import java.util.*
 
 object InputMenu {
-    suspend fun GuildChatInputCommandInteraction.createInputMenu(bot: DiscordBot) =
+    suspend fun GuildChatInputCommandInteraction.createInputMenu() =
         channel.createMessage {
             actionRow {
                 controlButton(Button.A)

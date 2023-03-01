@@ -51,7 +51,7 @@ private suspend fun GuildChatInputCommandInteraction.onMirror(
         """.trimMargin()
     }
 
-    val mirrorMessage = createInputMenu(bot)
+    val mirrorMessage = createInputMenu()
 
     mirrorMessage.edit {
         val coverImage =

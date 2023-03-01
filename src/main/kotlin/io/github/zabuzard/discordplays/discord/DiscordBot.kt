@@ -9,6 +9,7 @@ import dev.kord.core.entity.Guild
 import dev.kord.rest.builder.message.modify.embed
 import dev.kord.rest.request.KtorRequestException
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.Extensions.asChannelProvider
 import io.github.zabuzard.discordplays.Extensions.author
 import io.github.zabuzard.discordplays.Extensions.clearEmbeds
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
@@ -277,7 +278,7 @@ class DiscordBot(
         forAllHosts {
             it.mirrorMessage.edit {
                 files?.clear()
-                addFile(name, dataProducer())
+                addFile(name, dataProducer.asChannelProvider())
             }
         }
     }

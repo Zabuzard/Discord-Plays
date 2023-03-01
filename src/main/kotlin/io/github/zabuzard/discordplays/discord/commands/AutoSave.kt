@@ -308,7 +308,7 @@ class AutoSaver(
 
     @OptIn(DelicateCoroutinesApi::class)
     fun start(bot: DiscordBot, emulator: Emulator, kord: Kord) {
-        routineJob = GlobalScope.launch(Dispatchers.IO) { runRoutine(bot, emulator, kord) }
+        routineJob = GlobalScope.launch(Dispatchers.IO) { runRoutine(kord) }
     }
 
     fun stop() {
@@ -316,7 +316,7 @@ class AutoSaver(
         routineJob = null
     }
 
-    private suspend fun runRoutine(bot: DiscordBot, emulator: Emulator, kord: Kord) {
+    private suspend fun runRoutine(kord: Kord) {
         val autoSaver = this
         while (coroutineContext.isActive) {
             coroutineScope {
