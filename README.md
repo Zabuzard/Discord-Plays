@@ -166,7 +166,7 @@ The code base is divided into several main packages:
 ![architecture](https://i.imgur.com/FPJ9Mm4.png)
 
 The flow starts in `Main.kt`, starting the bot using the `Config.kt`
-and booting up all `@Service`s via dependency injection.
+and booting up all services, wiring them up.
 
 Game emulation is represented and controlled by `Emulator.kt`. Almost all flows
 start with invoking a command in either `OwnerCommands` or `HostCommands`, which
