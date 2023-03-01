@@ -12,11 +12,10 @@ import dev.kord.core.entity.interaction.SubCommand
 import dev.kord.core.event.interaction.GuildChatInputCommandInteractionCreateEvent
 import dev.kord.core.on
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.Extensions.asChannelProvider
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.Host
 import io.github.zabuzard.discordplays.discord.commands.InputMenu.createInputMenu
-import io.ktor.client.request.forms.ChannelProvider
-import io.ktor.util.cio.toByteReadChannel
 
 internal const val HOST_COMMAND_NAME = "host"
 internal const val MIRROR_SUB_NAME = "mirror"
@@ -59,7 +58,7 @@ private suspend fun GuildChatInputCommandInteraction.onMirror(
             if (bot.gameCurrentlyRunning) DiscordBot.STARTING_SOON_COVER_RESOURCE else DiscordBot.OFFLINE_COVER_RESOURCE
         addFile(
             "stream.png",
-            ChannelProvider { javaClass.getResourceAsStream(coverImage)!!.toByteReadChannel() }
+            { javaClass.getResourceAsStream(coverImage)!! }.asChannelProvider()
         )
     }
 

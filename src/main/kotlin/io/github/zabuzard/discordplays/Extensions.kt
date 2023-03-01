@@ -1,10 +1,20 @@
 package io.github.zabuzard.discordplays
 
+import dev.kord.common.entity.DiscordPartialEmoji
+import dev.kord.core.entity.Member
+import dev.kord.rest.builder.message.EmbedBuilder
+import dev.kord.rest.builder.message.modify.UserMessageModifyBuilder
+import dev.kord.rest.builder.message.modify.embed
+import dev.kord.x.emoji.DiscordEmoji
+import dev.kord.x.emoji.toReaction
+import io.ktor.client.request.forms.ChannelProvider
+import io.ktor.utils.io.jvm.javaio.toByteReadChannel
 import kotlinx.coroutines.CoroutineExceptionHandler
 import mu.KotlinLogging
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.util.concurrent.CancellationException
 import javax.imageio.ImageIO
 import kotlin.time.Duration
@@ -74,6 +84,25 @@ object Extensions {
         ).filterNot { (value, _) -> value == 0 }
             .joinToString(separator = " ") { (value, label) -> "$value$label" }
     }
+
+    fun UserMessageModifyBuilder.clearEmbeds() {
+        embed { description = "" }
+        embeds?.clear()
+    }
+
+    fun EmbedBuilder.author(member: Member) {
+        author {
+            name = member.displayName
+            icon = member.avatar?.url ?: member.defaultAvatar.url
+            url = "https://discord.com/users/${member.id.value}/"
+        }
+    }
+
+    fun DiscordEmoji.toPartialEmoji() =
+        DiscordPartialEmoji(name = toReaction().name)
+
+    fun (() -> InputStream).asChannelProvider() =
+        ChannelProvider { invoke().toByteReadChannel() }
 }
 
 private val logger = KotlinLogging.logger {}

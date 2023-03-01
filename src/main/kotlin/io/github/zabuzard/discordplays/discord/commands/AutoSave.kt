@@ -1,7 +1,6 @@
 package io.github.zabuzard.discordplays.discord.commands
 
 import dev.kord.common.entity.ButtonStyle
-import dev.kord.common.entity.DiscordPartialEmoji
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.asChannelOfOrNull
 import dev.kord.core.behavior.channel.createMessage
@@ -12,18 +11,17 @@ import dev.kord.core.on
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.rest.builder.message.create.embed
 import dev.kord.x.emoji.Emojis
-import dev.kord.x.emoji.toReaction
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.Extensions.asChannelProvider
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.Extensions.toByteArray
 import io.github.zabuzard.discordplays.Extensions.toInputStream
+import io.github.zabuzard.discordplays.Extensions.toPartialEmoji
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
-import io.ktor.client.request.forms.ChannelProvider
-import io.ktor.util.cio.toByteReadChannel
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -69,9 +67,16 @@ fun Kord.onAutoSaveConversation(
             interaction.deferPublicMessageUpdate()
             val (_, phase, value, _) = componentId.split("-", limit = 4)
             when (phase) {
-                "1" -> onReminderResponse(value, dmChannel, bot, autoSaver)
-                "2" -> onPreparationResponse(value, dmChannel, bot, emulator, autoSaver)
-                "4" -> onConfirmationResponse(dmChannel, bot)
+                REMINDER_PHASE_ID -> onReminderResponse(value, dmChannel, bot, autoSaver)
+                PREPARATION_PHASE_ID -> onPreparationResponse(
+                    value,
+                    dmChannel,
+                    bot,
+                    emulator,
+                    autoSaver
+                )
+
+                CONFIRMATION_PHASE_ID -> onConfirmationResponse(dmChannel, bot)
             }
         }
     }
@@ -86,7 +91,7 @@ fun Kord.onAutoSaveConversation(
 
             interaction.deferPublicMessageUpdate()
             when (componentId.split("-", limit = 4)[1]) {
-                "3" -> onMenuResponse(values, dmChannel, bot, emulator, autoSaver)
+                MENU_PHASE_ID -> onMenuResponse(values, dmChannel, bot, emulator, autoSaver)
             }
         }
     }
@@ -190,12 +195,12 @@ private suspend fun onPreparationResponse(
                     1 to "TRAINER"
                 ).forEach { (count, menuLabel) ->
                     option("$count - $menuLabel", "$count ${Button.DOWN}") {
-                        emoji = DiscordPartialEmoji(name = Emojis.arrowDown.toReaction().name)
+                        emoji = Emojis.arrowDown.toPartialEmoji()
                     }
                 }
 
                 option("0 - SAVE", NO_INPUT_LABEL) {
-                    emoji = DiscordPartialEmoji(name = Emojis.greenCircle.toReaction().name)
+                    emoji = Emojis.greenCircle.toPartialEmoji()
                 }
 
                 listOf(
@@ -203,12 +208,12 @@ private suspend fun onPreparationResponse(
                     2 to "EXIT"
                 ).forEach { (count, menuLabel) ->
                     option("$count - $menuLabel", "$count ${Button.UP}") {
-                        emoji = DiscordPartialEmoji(name = Emojis.arrowUp.toReaction().name)
+                        emoji = Emojis.arrowUp.toPartialEmoji()
                     }
                 }
 
                 option(CANCEL_LABEL, CANCEL_LABEL) {
-                    emoji = DiscordPartialEmoji(name = Emojis.x.toReaction().name)
+                    emoji = Emojis.x.toPartialEmoji()
                 }
             }
         }
@@ -285,9 +290,7 @@ private suspend fun sendFrameSnapshot(
     dmChannel.createMessage {
         addFile(
             "snapshot.png",
-            ChannelProvider {
-                autoSaver.lastFrame.toByteArray().toInputStream().toByteReadChannel()
-            }
+            { autoSaver.lastFrame.toByteArray().toInputStream() }.asChannelProvider()
         )
     }
 }

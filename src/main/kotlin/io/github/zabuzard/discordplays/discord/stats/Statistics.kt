@@ -117,18 +117,17 @@ class Statistics(private val config: Config) {
             return logger.debug { "Skip sending statistics update, game paused" }
         }
 
-
         val topUserOverview =
             userIdToInputSorted.take(20).joinToString("\n") { (id, inputCount) ->
                 "|* ${userToName[id]} - $inputCount"
             }
 
         val stats = """
-                    |Playtime: ${config.playtimeMs.milliseconds.formatted()}
-                    |Received $totalInputCount inputs by $uniqueUserCount users.
-                    |Top players:
-                    $topUserOverview
-                    """.trimMargin()
+            |Playtime: ${config.playtimeMs.milliseconds.formatted()}
+            |Received $totalInputCount inputs by $uniqueUserCount users.
+            |Top players:
+             $topUserOverview
+        """.trimMargin()
 
         logger.debug { "Sending statistics update" }
         coroutineScope {

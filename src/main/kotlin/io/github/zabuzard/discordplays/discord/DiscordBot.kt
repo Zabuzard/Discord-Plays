@@ -9,11 +9,12 @@ import dev.kord.core.entity.Guild
 import dev.kord.rest.builder.message.modify.embed
 import dev.kord.rest.request.KtorRequestException
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.Extensions.author
+import io.github.zabuzard.discordplays.Extensions.clearEmbeds
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.Extensions.toByteArray
 import io.github.zabuzard.discordplays.Extensions.toInputStream
 import io.github.zabuzard.discordplays.discord.commands.AutoSaver
-import io.github.zabuzard.discordplays.discord.commands.CommandExtensions.clearEmbeds
 import io.github.zabuzard.discordplays.discord.stats.Statistics
 import io.github.zabuzard.discordplays.discord.stats.StatisticsConsumer
 import io.github.zabuzard.discordplays.emulation.Emulator
@@ -179,13 +180,7 @@ class DiscordBot(
 
             val guild = message.author.getGuild().name
             it.chatDescriptionMessage.getChannel().createEmbed {
-                message.author.let {
-                    author {
-                        name = it.displayName
-                        icon = it.avatar?.url ?: it.defaultAvatar.url
-                        url = "https://discord.com/users/${it.id.value}/"
-                    }
-                }
+                author(message.author)
                 description = message.content
                 footer { text = "from $guild" }
             }

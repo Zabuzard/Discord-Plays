@@ -1,7 +1,6 @@
 package io.github.zabuzard.discordplays.discord.commands
 
 import dev.kord.common.entity.ButtonStyle
-import dev.kord.common.entity.DiscordPartialEmoji
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.interaction.respondEphemeral
@@ -11,8 +10,8 @@ import dev.kord.core.on
 import dev.kord.rest.builder.component.ActionRowBuilder
 import dev.kord.rest.builder.message.create.actionRow
 import dev.kord.x.emoji.Emojis
-import dev.kord.x.emoji.toReaction
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
+import io.github.zabuzard.discordplays.Extensions.toPartialEmoji
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.UserInput
 import kotlinx.datetime.Clock
@@ -41,7 +40,7 @@ object InputMenu {
     private fun ActionRowBuilder.controlButton(button: Button) {
         val id = "$CONTROL_BUTTON_ID_PREFIX-${button.name}-${UUID.randomUUID()}"
         interactionButton(ButtonStyle.Secondary, id) {
-            emoji = DiscordPartialEmoji(name = button.toEmoji().toReaction().name)
+            emoji = button.toEmoji().toPartialEmoji()
         }
     }
 
