@@ -3,29 +3,25 @@ package io.github.zabuzard.discordplays.discord.commands
 import dev.kord.common.entity.Permission
 import dev.kord.common.entity.Permissions
 import dev.kord.core.Kord
-import dev.kord.core.behavior.createApplicationCommands
-import dev.kord.rest.builder.interaction.GuildMultiApplicationCommandBuilder
+import dev.kord.rest.builder.interaction.GlobalMultiApplicationCommandBuilder
 import dev.kord.rest.builder.interaction.boolean
 import dev.kord.rest.builder.interaction.string
 import dev.kord.rest.builder.interaction.subCommand
 import dev.kord.rest.builder.interaction.user
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import org.apache.logging.log4j.Level
 
 fun Kord.registerCommands() {
     launch {
-        guilds.toList().forEach {
-            it.createApplicationCommands {
-                hostCommands()
-                ownerCommands()
-            }.collect()
-        }
+        createGlobalApplicationCommands {
+            hostCommands()
+            ownerCommands()
+        }.collect()
     }
 }
 
-private fun GuildMultiApplicationCommandBuilder.hostCommands() {
+private fun GlobalMultiApplicationCommandBuilder.hostCommands() {
     input(HOST_COMMAND_NAME, "commands for streaming the event in your community") {
         defaultMemberPermissions = Permissions(Permission.ModerateMembers)
 
@@ -42,7 +38,7 @@ private fun GuildMultiApplicationCommandBuilder.hostCommands() {
     }
 }
 
-private fun GuildMultiApplicationCommandBuilder.ownerCommands() {
+private fun GlobalMultiApplicationCommandBuilder.ownerCommands() {
     input(COMMAND_NAME, "commands for managing the event") {
         defaultMemberPermissions = Permissions(Permission.Administrator)
 
