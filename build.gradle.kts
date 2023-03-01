@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.zabuzard.discordplays"
-version = "2.0-SNAPSHOT"
+version = "2.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
