@@ -1,6 +1,5 @@
 # Discord Plays ![emoji](https://i.imgur.com/Hs2Wohm.png)
 
-
 [![codefactor](https://img.shields.io/codefactor/grade/github/zabuzard/discord-plays)](https://www.codefactor.io/repository/github/zabuzard/discord-plays)
 ![Kotlin](https://img.shields.io/badge/Kotlin-1.8.0-ff696c)
 [![license](https://img.shields.io/github/license/Zabuzard/Discord-Plays)](https://github.com/Zabuzard/Discord-Plays/blob/master/LICENSE)
@@ -22,11 +21,6 @@ Inspired by Twitch Plays Pokémon. Feel free to contribute or tell us how you li
 * various moderation commands
 * configurable, resilient
 
-As of today, we are not planning on hosting the bot ourselves, or making global
-events available to everyone.
-
-We encourage you to download the bot and self-host your own events! 👍
-
 ### Lag
 
 Due to the design, the game has the following lag:
@@ -36,6 +30,79 @@ Due to the design, the game has the following lag:
 * 10s - reaction, from clicking the button until you see the moment on your screen
 
 ## Get started
+
+As of today, we are not planning on hosting the bot ourselves, or making global
+events available to everyone.
+
+We encourage you to download the bot and self-host your own events! 👍
+
+Nonetheless, if you know someone who hosts the bot already and has an event running,
+you can easily join their event with your community.
+
+### Join existing event
+
+To participate in an ongoing event with your community,
+you need to be **Moderator** and add the bot to your server.
+Ask the owner of the event for an **invite-link**.
+
+![invite](https://i.imgur.com/be6kBP1.png)
+
+Once the bot is part of your server, use the slash-command `/host mirror` in the
+channel you would like to dedicate to the event.
+
+![mirror](https://i.imgur.com/XBYr9Lj.gif)
+
+The bot creates the stream mirror, and a thread for cross-community chat.
+
+For best experience, we recommend the following settings:
+
+* disallow *Send Message*, allow *Send Messages in Threads* (except for the bot)
+
+  ![message permission](https://i.imgur.com/maRXO4S.png)
+
+* set slow mode of 5 seconds for the thread
+
+  ![slow mode](https://i.imgur.com/tIaVAzF.png)
+
+### Host yourself
+
+#### Discord
+
+Create a bot in Discord. Therefore, visit
+the [Developer Portal](https://discord.com/developers/applications).
+Go to **Applications** and click **New Application**. Walk through the dialog and set everything up
+to your liking.
+
+Go to the **Bot** section and copy your **token** (it will only be shown once).
+Ensure to tick:
+
+* **Server Members Intent** and
+* **Message Content Intent**
+
+![intent](https://i.imgur.com/IhnT7BQ.png)
+
+Create an invite-link to join the bot to servers by going to the **OAuth2/URL Generator** section.
+
+Under *Scope*, check:
+
+* bot
+* applications.command
+
+Select the following *Bot Permissions*:
+
+* Read Messages/View Channels
+* Send Messages
+* Create Public Threads
+* Send Messages in Threads
+* Manage Threads
+* Attach Files
+* Use Slash Commands
+
+![permissions](https://i.imgur.com/sFJtim8.png)
+
+The invite-link is shown in the box below.
+
+#### Application
 
 Download the latest version from
 our [release section](https://github.com/Zabuzard/Discord-Plays/releases).
