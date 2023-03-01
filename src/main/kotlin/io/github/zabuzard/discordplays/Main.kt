@@ -43,6 +43,7 @@ suspend fun main(args: Array<String>) {
     val statistics = Statistics(config)
     val autoSaver = AutoSaver(config, streamRenderer)
     val bot = DiscordBot(
+        kord,
         config,
         emulator,
         streamRenderer,

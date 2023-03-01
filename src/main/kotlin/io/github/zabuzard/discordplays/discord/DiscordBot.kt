@@ -28,6 +28,7 @@ import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import mu.KotlinLogging
@@ -38,6 +39,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class DiscordBot(
+    kord: Kord,
     private val config: Config,
     private val emulator: Emulator,
     private val streamRenderer: StreamRenderer,
@@ -71,6 +73,10 @@ class DiscordBot(
     init {
         streamRenderer.addStreamConsumer(this)
         statistics.addStatisticsConsumer(this)
+
+        runBlocking {
+            loadHosts(kord)
+        }
     }
 
     suspend fun startGame(kord: Kord) {
