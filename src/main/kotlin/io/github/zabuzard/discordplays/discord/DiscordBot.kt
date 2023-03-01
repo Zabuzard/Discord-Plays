@@ -57,6 +57,10 @@ class DiscordBot(
         maximumSize = 1_000
         expireAfterWrite = 10.seconds
     }.build()
+    private val userChatCache = caffeineBuilder<Snowflake, Instant> {
+        maximumSize = 1_000
+        expireAfterWrite = 10.seconds
+    }.build()
 
     var userInputLockedToOwners = false
         set(value) {
@@ -124,12 +128,18 @@ class DiscordBot(
         ACCEPTED,
         RATE_LIMITED,
         BLOCKED_NON_OWNER,
-        USER_BANNED
+        USER_BANNED,
+        GAME_OFFLINE
     }
 
     suspend fun onUserInput(input: UserInput): UserInputResult {
         val userId = input.user.id
         val userName = input.user.username
+
+        if (!gameCurrentlyRunning) {
+            logger.debug { withLoggingContext("user" to userName) { "Blocked user input ($userName), game offline" } }
+            return UserInputResult.GAME_OFFLINE
+        }
 
         if (userInputLockedToOwners && userId !in config.owners) {
             logger.debug { withLoggingContext("user" to userName) { "Blocked user input ($userName), locked to owner" } }
@@ -172,16 +182,26 @@ class DiscordBot(
     }
 
     suspend fun onChatMessage(message: ChatMessage) {
+        val author = message.author
+        val lastMessage = userChatCache.getIfPresent(author.id)
+
+        val now = Clock.System.now()
+        val timeSinceLastMessage = if (lastMessage == null) userChatRateLimit else now - lastMessage
+        if (timeSinceLastMessage < userChatRateLimit) {
+            return
+        }
+        userChatCache.put(author.id, now)
+
         overlayRenderer.recordChatMessage(message)
 
         forAllHosts {
-            if (it.guild.id == message.author.guildId) {
+            if (it.guild.id == author.guildId) {
                 return@forAllHosts
             }
 
-            val guild = message.author.getGuild().name
+            val guild = author.getGuild().name
             it.chatDescriptionMessage.getChannel().createEmbed {
-                author(message.author)
+                author(author)
                 description = message.content
                 footer { text = "from $guild" }
             }
@@ -331,6 +351,7 @@ class DiscordBot(
 private val logger = KotlinLogging.logger {}
 
 private val userInputRateLimit = 1.5.seconds
+private val userChatRateLimit = 1.5.seconds
 private const val MESSAGE_NOT_FOUND_ERROR = "UnknownMessage"
 
 private val pauseAfterNoInputFor = 2.minutes

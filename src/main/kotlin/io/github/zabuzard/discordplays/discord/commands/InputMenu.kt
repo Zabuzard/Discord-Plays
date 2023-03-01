@@ -81,6 +81,11 @@ fun Kord.onControlButtonClicked(bot: DiscordBot) {
                         Please get in contact with an owner or host of the event.
                     """.trimIndent()
                 }
+
+                DiscordBot.UserInputResult.GAME_OFFLINE -> respondEphemeral {
+                    content =
+                        "The game is currently offline. Please wait until it is back."
+                }
             }
         }
     }
