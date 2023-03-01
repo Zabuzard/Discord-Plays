@@ -42,7 +42,7 @@ you can easily join their event with your community.
 ### Join existing event
 
 To participate in an ongoing event with your community,
-you need to be **Moderator** and add the bot to your server.
+you need to add the bot to your server.
 Ask the owner of the event for an **invite-link**.
 
 ![invite](https://i.imgur.com/be6kBP1.png)
