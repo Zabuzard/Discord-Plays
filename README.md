@@ -51,7 +51,7 @@ At minimum, make sure to configure `romPath` and `owners`. Latter will be the ID
 account.
 
 The bot should be up and running now. Start the game emulation using `/owner start`.
-At this point, all participating communities can set up their stream by using `/host stream`,
+At this point, all participating communities can set up their stream by using `/host mirror`,
 which will create the message containing the stream, the interaction buttons and a thread for
 displaying
 statistics and chatting.
@@ -128,7 +128,7 @@ This can be configured with Discords built-in integration settings.
 ![integration settings](https://i.imgur.com/3Ct0buk.png)
 
 Hosts can create the actual stream message and thread in a channel of their community
-using `/host stream`. To stop the stream for this community,
+using `/host mirror`. To stop the stream for this community,
 just delete the bots message or the thread. Afterwards, a stream can be started,
 for example in a different channel, with the same command again.
 
