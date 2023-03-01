@@ -270,9 +270,9 @@ private suspend fun GuildChatInputCommandInteraction.onCreateVideo(
         ProcessBuilder(
             "ffmpeg",
             "-framerate",
-            "5",
+            "10",
             "-r",
-            "5",
+            "10",
             "-i",
             "%d${FrameRecorder.FRAME_SUFFIX}",
             "-pix_fmt",

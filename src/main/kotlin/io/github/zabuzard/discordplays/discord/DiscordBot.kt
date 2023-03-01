@@ -228,7 +228,7 @@ class DiscordBot(
         requireNotNull(host) { "Could not find any stream hosted in this server." }
 
         logger.info { "Set community message for ${host.guild.name}: $message" }
-        host.streamMessage.edit {
+        host.mirrorMessage.edit {
             clearEmbeds()
 
             if (message != null) {
@@ -274,7 +274,7 @@ class DiscordBot(
 
     private suspend fun sendStreamFile(name: String, dataProducer: () -> InputStream) {
         forAllHosts {
-            it.streamMessage.edit {
+            it.mirrorMessage.edit {
                 files?.clear()
                 addFile(name, dataProducer())
             }
@@ -331,5 +331,5 @@ private val logger = KotlinLogging.logger {}
 private val userInputRateLimit = 1.5.seconds
 private const val MESSAGE_NOT_FOUND_ERROR = "UnknownMessage"
 
-private val pauseAfterNoInputFor = 5.minutes
+private val pauseAfterNoInputFor = 2.minutes
 private const val PAUSED_MESSAGE = "Game is paused, press any key to continue"

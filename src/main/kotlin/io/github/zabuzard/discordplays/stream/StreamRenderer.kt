@@ -7,8 +7,10 @@ import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.BannerRendering.Placement
 import io.github.zabuzard.discordplays.stream.BannerRendering.renderBanner
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -42,7 +44,7 @@ class StreamRenderer(
     @OptIn(DelicateCoroutinesApi::class)
     fun start() {
         require(renderJob == null) { "Cannot start, job is already running" }
-        renderJob = GlobalScope.launch(logAllExceptions) { renderStream() }
+        renderJob = GlobalScope.launch(Dispatchers.IO) { renderStream() }
     }
 
     fun stop() {
@@ -63,7 +65,7 @@ class StreamRenderer(
 
                     gif += frame
                     if (gif.size >= FLUSH_GIF_AT_FRAMES) {
-                        val rawGif = gif.endSequence()
+                        val rawGif = async(Dispatchers.IO) { gif.endSequence() }.await()
                         consumers.forEach {
                             launch(logAllExceptions) { it.acceptGif(rawGif) }
                         }

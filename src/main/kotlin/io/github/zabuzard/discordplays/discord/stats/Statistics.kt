@@ -6,6 +6,7 @@ import io.github.zabuzard.discordplays.Extensions.formatted
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.UserInput
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -33,7 +34,7 @@ class Statistics(private val config: Config) {
             config.userToInputCount.associate { (user, _) -> user.id to user.name }.toMutableMap()
         totalInputCount = config.userToInputCount.sumOf { it.second }
 
-        GlobalScope.launch(logAllExceptions) { computeStats() }
+        GlobalScope.launch(Dispatchers.IO) { computeStatsRoutine() }
     }
 
     fun addStatisticsConsumer(consumer: StatisticsConsumer) {
@@ -82,48 +83,57 @@ class Statistics(private val config: Config) {
         }
     }
 
-    private suspend fun computeStats() {
+    private suspend fun computeStatsRoutine() {
         while (coroutineContext.isActive) {
             logAllExceptions {
-                coroutineScope {
-                    val uniqueUserCount = userToInputCount.size
+                computeStats()
 
-                    val userIdToInputSorted =
-                        userToInputCount.filterNot { (id, _) -> id in config.bannedUsers }
-                            .toList().sortedByDescending { it.second }
+                delay(1.minutes)
+            }
+        }
+    }
 
-                    config.edit {
-                        userToInputCount = this@Statistics.userToInputCount.mapKeys { (id, _) ->
-                            UserSnapshot(id, userToName[id]!!)
-                        }.toList()
+    private suspend fun computeStats() {
+        val uniqueUserCount = userToInputCount.size
 
-                        gameActiveLastHeartbeat?.let {
-                            val now = Clock.System.now()
-                            val playtimeSinceLastHeartbeat = now - it
-                            gameActiveLastHeartbeat = now
-                            playtimeMs += playtimeSinceLastHeartbeat.inWholeMilliseconds
-                        }
-                    }
+        val userIdToInputSorted =
+            userToInputCount.filterNot { (id, _) -> id in config.bannedUsers }
+                .toList().sortedByDescending { it.second }
 
-                    val topUserOverview =
-                        userIdToInputSorted.take(20).joinToString("\n") { (id, inputCount) ->
-                            "|* ${userToName[id]} - $inputCount"
-                        }
+        config.edit {
+            userToInputCount = this@Statistics.userToInputCount.mapKeys { (id, _) ->
+                UserSnapshot(id, userToName[id]!!)
+            }.toList()
 
-                    val stats = """
+            gameActiveLastHeartbeat?.let {
+                val now = Clock.System.now()
+                val playtimeSinceLastHeartbeat = now - it
+                gameActiveLastHeartbeat = now
+                playtimeMs += playtimeSinceLastHeartbeat.inWholeMilliseconds
+            }
+        }
+
+        if (gameActiveLastHeartbeat == null) {
+            return logger.debug { "Skip sending statistics update, game paused" }
+        }
+
+
+        val topUserOverview =
+            userIdToInputSorted.take(20).joinToString("\n") { (id, inputCount) ->
+                "|* ${userToName[id]} - $inputCount"
+            }
+
+        val stats = """
                     |Playtime: ${config.playtimeMs.milliseconds.formatted()}
                     |Received $totalInputCount inputs by $uniqueUserCount users.
                     |Top players:
                     $topUserOverview
                     """.trimMargin()
 
-                    logger.info { "Sending statistics update" }
-                    consumers.forEach {
-                        launch(logAllExceptions) { it.acceptStatistics(stats) }
-                    }
-
-                    delay(1.minutes)
-                }
+        logger.debug { "Sending statistics update" }
+        coroutineScope {
+            consumers.forEach {
+                launch(logAllExceptions) { it.acceptStatistics(stats) }
             }
         }
     }

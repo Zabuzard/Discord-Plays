@@ -29,7 +29,7 @@ private fun GuildMultiApplicationCommandBuilder.hostCommands() {
     input(HOST_COMMAND_NAME, "commands for streaming the event in your community") {
         defaultMemberPermissions = Permissions(Permission.ModerateMembers)
 
-        subCommand(STREAM_SUB_NAME, "Starts your game stream in this channel")
+        subCommand(MIRROR_SUB_NAME, "Mirrors the game stream in this channel")
         subCommand(
             COMMUNITY_MESSAGE_SUB_NAME,
             "Attaches a community-wide message to the stream hosted in this channel"

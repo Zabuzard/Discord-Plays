@@ -25,6 +25,7 @@ import io.github.zabuzard.discordplays.stream.StreamRenderer
 import io.ktor.client.request.forms.ChannelProvider
 import io.ktor.util.cio.toByteReadChannel
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -183,6 +184,7 @@ private suspend fun onPreparationResponse(
                 allowedValues = 1..1
 
                 listOf(
+                    4 to "POKéDEX",
                     3 to "POKéMON",
                     2 to "ITEM",
                     1 to "TRAINER"
@@ -303,7 +305,7 @@ class AutoSaver(
 
     @OptIn(DelicateCoroutinesApi::class)
     fun start(bot: DiscordBot, emulator: Emulator, kord: Kord) {
-        routineJob = GlobalScope.launch(logAllExceptions) { runRoutine(bot, emulator, kord) }
+        routineJob = GlobalScope.launch(Dispatchers.IO) { runRoutine(bot, emulator, kord) }
     }
 
     fun stop() {

@@ -19,7 +19,7 @@ import io.ktor.client.request.forms.ChannelProvider
 import io.ktor.util.cio.toByteReadChannel
 
 internal const val HOST_COMMAND_NAME = "host"
-internal const val STREAM_SUB_NAME = "stream"
+internal const val MIRROR_SUB_NAME = "mirror"
 internal const val COMMUNITY_MESSAGE_SUB_NAME = "community-message"
 internal const val COMMUNITY_MESSAGE_SUB_MESSAGE_OPTION = "message"
 
@@ -34,27 +34,27 @@ fun Kord.onHostCommands(
         }
         with(interaction) {
             when (command.name) {
-                STREAM_SUB_NAME -> onStream(config, bot)
+                MIRROR_SUB_NAME -> onMirror(config, bot)
                 COMMUNITY_MESSAGE_SUB_NAME -> onCommunityMessage(bot)
             }
         }
     }
 }
 
-private suspend fun GuildChatInputCommandInteraction.onStream(
+private suspend fun GuildChatInputCommandInteraction.onMirror(
     config: Config,
     bot: DiscordBot
 ) {
     respondEphemeral {
         content = """
-                |Starting to host the stream in this channel.
+                |Starting to mirror the stream in this channel.
                 |To stop the stream, just delete the message that contains it.
         """.trimMargin()
     }
 
-    val streamMessage = createInputMenu(bot)
+    val mirrorMessage = createInputMenu(bot)
 
-    streamMessage.edit {
+    mirrorMessage.edit {
         val coverImage =
             if (bot.gameCurrentlyRunning) DiscordBot.STARTING_SOON_COVER_RESOURCE else DiscordBot.OFFLINE_COVER_RESOURCE
         addFile(
@@ -63,9 +63,9 @@ private suspend fun GuildChatInputCommandInteraction.onStream(
         )
     }
 
-    val chatDescriptionMessage = createChat(streamMessage, config).also { it.pin() }
+    val chatDescriptionMessage = createChat(mirrorMessage, config).also { it.pin() }
 
-    bot.addHost(Host(getGuild(), streamMessage, chatDescriptionMessage))
+    bot.addHost(Host(getGuild(), mirrorMessage, chatDescriptionMessage))
 }
 
 private suspend fun GuildChatInputCommandInteraction.onCommunityMessage(

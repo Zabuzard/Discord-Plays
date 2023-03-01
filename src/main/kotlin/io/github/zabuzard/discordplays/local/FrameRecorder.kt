@@ -1,10 +1,10 @@
 package io.github.zabuzard.discordplays.local
 
 import io.github.zabuzard.discordplays.Config
-import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.awt.image.BufferedImage
@@ -36,7 +36,7 @@ class FrameRecorder(
     @OptIn(DelicateCoroutinesApi::class)
     override suspend fun acceptFrame(frame: BufferedImage) {
         if (skipFrameCount.getAndDecrement() == 0) {
-            GlobalScope.launch(logAllExceptions) { recordFrame(frame) }
+            GlobalScope.launch(Dispatchers.IO) { recordFrame(frame) }
 
             skipFrameCount.set(SKIP_FRAMES)
         }
