@@ -113,7 +113,10 @@ class DiscordBot(
     fun addHost(host: Host) {
         require(guildToHost[host.guild] == null) { "Only one host per guild allowed, first delete the existing host" }
 
-        logger.info { "Adding host (${host.guild.name})" }
+        logger.info {
+            "Adding host ${host.guild.id} (${host.guild.name}), mirrorMessage (${host.mirrorMessage.toId()}), " +
+                "chatDescriptionMessage (${host.chatDescriptionMessage.toId()})"
+        }
         guildToHost += host.guild to host
         saveHosts()
     }
