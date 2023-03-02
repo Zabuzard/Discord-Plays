@@ -7,16 +7,15 @@ import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.BannerRendering.Placement
 import io.github.zabuzard.discordplays.stream.BannerRendering.renderBanner
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import java.awt.image.BufferedImage
+import java.util.concurrent.Executors
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -25,6 +24,7 @@ class StreamRenderer(
     private val emulator: Emulator,
     private val overlayRenderer: OverlayRenderer
 ) {
+    private val renderService = Executors.newSingleThreadExecutor()
     private var consumers = emptyList<StreamConsumer>()
 
     private var renderJob: Job? = null
@@ -44,7 +44,12 @@ class StreamRenderer(
     @OptIn(DelicateCoroutinesApi::class)
     fun start() {
         require(renderJob == null) { "Cannot start, job is already running" }
-        renderJob = GlobalScope.launch(Dispatchers.IO) { renderStream() }
+
+        renderService.submit {
+            runBlocking {
+                renderJob = launch { renderStream() }
+            }
+        }
     }
 
     fun stop() {
@@ -65,7 +70,7 @@ class StreamRenderer(
 
                     gif += frame
                     if (gif.size >= FLUSH_GIF_AT_FRAMES) {
-                        val rawGif = async(Dispatchers.IO) { gif.endSequence() }.await()
+                        val rawGif = gif.endSequence()
                         consumers.forEach {
                             launch(logAllExceptions) { it.acceptGif(rawGif) }
                         }
