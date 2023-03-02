@@ -12,10 +12,10 @@ fun Kord.onChatMessage(
     bot: DiscordBot
 ) {
     on<MessageCreateEvent> {
-        if (message.author?.isBot == true) {
-            return@on
-        }
-        if (message.author?.id in config.bannedUsers) {
+        if (message.author?.isBot == true ||
+            message.webhookId != null ||
+            message.author?.id in config.bannedUsers
+        ) {
             return@on
         }
 
