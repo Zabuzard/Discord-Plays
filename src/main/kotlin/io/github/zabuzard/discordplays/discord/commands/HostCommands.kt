@@ -19,6 +19,7 @@ import io.github.zabuzard.discordplays.discord.commands.InputMenu.createInputMen
 
 internal const val HOST_COMMAND_NAME = "host"
 internal const val MIRROR_SUB_NAME = "mirror"
+internal const val REMOVE_MIRROR_SUB_NAME = "remove-mirror"
 internal const val COMMUNITY_MESSAGE_SUB_NAME = "community-message"
 internal const val COMMUNITY_MESSAGE_SUB_MESSAGE_OPTION = "message"
 
@@ -34,6 +35,7 @@ fun Kord.onHostCommands(
         with(interaction) {
             when (command.name) {
                 MIRROR_SUB_NAME -> onMirror(config, bot)
+                REMOVE_MIRROR_SUB_NAME -> onRemoveMirror(bot)
                 COMMUNITY_MESSAGE_SUB_NAME -> onCommunityMessage(bot)
             }
         }
@@ -44,6 +46,14 @@ private suspend fun GuildChatInputCommandInteraction.onMirror(
     config: Config,
     bot: DiscordBot
 ) {
+    val guild = getGuild()
+    if (bot.hasHost(guild)) {
+        respondEphemeral {
+            content = "Only one mirror per guild allowed, please first delete the existing mirror."
+        }
+        return
+    }
+
     respondEphemeral {
         content = """
                 |Starting to mirror the stream in this channel.
@@ -64,7 +74,14 @@ private suspend fun GuildChatInputCommandInteraction.onMirror(
 
     val chatDescriptionMessage = createChat(mirrorMessage, config).also { it.pin() }
 
-    bot.addHost(Host(getGuild(), mirrorMessage, chatDescriptionMessage))
+    bot.addHost(Host(guild, mirrorMessage, chatDescriptionMessage))
+}
+
+private suspend fun GuildChatInputCommandInteraction.onRemoveMirror(
+    bot: DiscordBot
+) {
+    bot.removeHost(getGuild())
+    respondEphemeral { content = "Removed any existing mirror for this community." }
 }
 
 private suspend fun GuildChatInputCommandInteraction.onCommunityMessage(

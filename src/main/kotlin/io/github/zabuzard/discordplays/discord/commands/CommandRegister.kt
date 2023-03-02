@@ -26,6 +26,7 @@ private fun GlobalMultiApplicationCommandBuilder.hostCommands() {
         defaultMemberPermissions = Permissions(Permission.ModerateMembers)
 
         subCommand(MIRROR_SUB_NAME, "Mirrors the game stream in this channel")
+        subCommand(REMOVE_MIRROR_SUB_NAME, "Removes any existing mirrors for this community")
         subCommand(
             COMMUNITY_MESSAGE_SUB_NAME,
             "Attaches a community-wide message to the stream hosted in this channel"

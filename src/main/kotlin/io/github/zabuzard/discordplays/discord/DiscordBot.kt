@@ -111,8 +111,6 @@ class DiscordBot(
     }
 
     fun addHost(host: Host) {
-        require(guildToHost[host.guild] == null) { "Only one host per guild allowed, first delete the existing host" }
-
         logger.info {
             "Adding host ${host.guild.id} (${host.guild.name}), mirrorMessage (${host.mirrorMessage.toId()}), " +
                 "chatDescriptionMessage (${host.chatDescriptionMessage.toId()})"
@@ -121,9 +119,13 @@ class DiscordBot(
         saveHosts()
     }
 
-    private fun removeHost(host: Host) {
-        logger.info { "Removing host (${host.guild.name})" }
-        guildToHost -= host.guild
+    fun hasHost(guild: Guild): Boolean {
+        return guildToHost.containsKey(guild)
+    }
+
+    fun removeHost(guild: Guild) {
+        logger.info { "Removing host ${guild.id} (${guild.name})" }
+        guildToHost -= guild
         saveHosts()
     }
 
@@ -335,7 +337,7 @@ class DiscordBot(
                         consumer(it)
                     } catch (e: KtorRequestException) {
                         if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
-                            removeHost(it)
+                            removeHost(it.guild)
                         } else {
                             throw e
                         }
