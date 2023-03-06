@@ -47,6 +47,10 @@ class FrameRecorder(
     }
 
     private fun recordFrame(frame: BufferedImage) {
+        if (config.recordingPath.isEmpty()) {
+            return
+        }
+
         val date = LocalDate.now()!!
         val frameFolder = Path.of(config.recordingPath, date.toString()).createDirectories()
 
