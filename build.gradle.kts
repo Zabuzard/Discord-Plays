@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.zabuzard.discordplays"
-version = "2.5-SNAPSHOT"
+version = "2.6-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -22,7 +22,7 @@ dependencies {
 
     implementation("dev.kord:kord-core:0.8.0-M17")
     implementation("dev.kord.x:emoji:0.5.0")
-    implementation("com.github.trekawek:coffee-gb:master-SNAPSHOT")
+    implementation("com.github.Zabuzard:coffee-gb:discord_plays_pokemon-SNAPSHOT")
     implementation("com.sksamuel.aedile:aedile-core:1.2.0")
 
     testImplementation(kotlin("test"))
