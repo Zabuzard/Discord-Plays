@@ -168,9 +168,9 @@ private fun Button.label() = when (this) {
 private fun User.color() = Random(id.value.toLong()).let {
     // One channel is bright to ensure it stands out on black background
     val (r, g, b) = listOf(
-        it.nextInt(150, 256),
-        it.nextInt(25, 256),
-        it.nextInt(25, 256)
+        it.nextInt(100, 256),
+        it.nextInt(20, 256),
+        it.nextInt(20, 256)
     ).shuffled(it)
 
     Color(r, g, b)
