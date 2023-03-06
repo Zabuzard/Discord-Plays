@@ -301,9 +301,10 @@ class DiscordBot(
 
     private suspend fun sendStreamFile(name: String, dataProducer: () -> InputStream) {
         forAllHosts {
+            val data = dataProducer.asChannelProvider()
             it.mirrorMessage.edit {
                 files?.clear()
-                addFile(name, dataProducer.asChannelProvider())
+                addFile(name, data)
             }
         }
     }

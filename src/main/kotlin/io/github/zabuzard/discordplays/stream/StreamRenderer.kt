@@ -16,6 +16,7 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import java.awt.image.BufferedImage
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -25,9 +26,11 @@ class StreamRenderer(
     private val overlayRenderer: OverlayRenderer
 ) {
     private val renderService = Executors.newSingleThreadExecutor()
+    private val gifConsumerService = Executors.newSingleThreadExecutor()
     private var consumers = emptyList<StreamConsumer>()
 
     private var renderJob: Job? = null
+    private var consumeGifJob: Future<*>? = null
 
     private var gif: Gif = Gif(gifFrameRate)
 
@@ -70,9 +73,16 @@ class StreamRenderer(
 
                     gif += frame
                     if (gif.size >= FLUSH_GIF_AT_FRAMES) {
-                        val rawGif = gif.endSequence()
-                        consumers.forEach {
-                            launch(logAllExceptions) { it.acceptGif(rawGif) }
+                        // Skip GIF if consumers are too slow
+                        if (consumeGifJob?.isDone != false) {
+                            val rawGif = gif.endSequence()
+                            consumeGifJob = gifConsumerService.submit {
+                                runBlocking {
+                                    launch { sendGifToConsumers(rawGif) }
+                                }
+                            }
+                        } else {
+                            logger.warn { "Skipping gif, consumers are still busy with previous" }
                         }
 
                         gif = Gif(gifFrameRate)
@@ -110,6 +120,14 @@ class StreamRenderer(
 
             g.dispose()
         }
+
+    private suspend fun sendGifToConsumers(rawGif: ByteArray) {
+        coroutineScope {
+            consumers.forEach {
+                launch(logAllExceptions) { it.acceptGif(rawGif) }
+            }
+        }
+    }
 }
 
 private val logger = KotlinLogging.logger {}
