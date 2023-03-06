@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.zabuzard.discordplays"
-version = "2.4-SNAPSHOT"
+version = "2.5-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -37,7 +37,7 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(18)
+    jvmToolchain(17)
 }
 
 application {
