@@ -218,7 +218,7 @@ The main technologies being used are
 
 * Kotlin
 * Gradle
-* [Kord](https://github.com/kordlib/kord) as Discord framework
+* [JDA](https://github.com/DV8FromTheWorld/JDA) as Discord framework
 * [Coffee GB](https://github.com/trekawek/coffee-gb) as emulator
 
 ### Architecture
