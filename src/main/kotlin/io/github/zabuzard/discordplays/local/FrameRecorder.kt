@@ -1,16 +1,14 @@
 package io.github.zabuzard.discordplays.local
 
 import io.github.zabuzard.discordplays.Config
+import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import java.awt.image.BufferedImage
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDate
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import javax.imageio.ImageIO
@@ -33,16 +31,15 @@ class FrameRecorder(
         streamRenderer.removeStreamConsumer(this)
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
-    override suspend fun acceptFrame(frame: BufferedImage) {
+    override fun acceptFrame(frame: BufferedImage) {
         if (skipFrameCount.getAndDecrement() == 0) {
-            GlobalScope.launch(Dispatchers.IO) { recordFrame(frame) }
+            CompletableFuture.runAsync { logAllExceptions { recordFrame(frame) } }
 
             skipFrameCount.set(SKIP_FRAMES)
         }
     }
 
-    override suspend fun acceptGif(gif: ByteArray) {
+    override fun acceptGif(gif: ByteArray) {
         // Only interested in frames
     }
 

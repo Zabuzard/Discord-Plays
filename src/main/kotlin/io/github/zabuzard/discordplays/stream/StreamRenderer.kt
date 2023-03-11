@@ -1,23 +1,17 @@
 package io.github.zabuzard.discordplays.stream
 
+import io.github.oshai.KotlinLogging
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.gif.Gif
 import io.github.zabuzard.discordplays.emulation.Emulator
 import io.github.zabuzard.discordplays.stream.BannerRendering.Placement
 import io.github.zabuzard.discordplays.stream.BannerRendering.renderBanner
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
 import java.awt.image.BufferedImage
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import kotlin.coroutines.coroutineContext
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
 
 class StreamRenderer(
@@ -25,11 +19,11 @@ class StreamRenderer(
     private val emulator: Emulator,
     private val overlayRenderer: OverlayRenderer
 ) {
-    private val renderService = Executors.newSingleThreadExecutor()
+    private val renderService = Executors.newSingleThreadScheduledExecutor()
     private val gifConsumerService = Executors.newSingleThreadExecutor()
     private var consumers = emptyList<StreamConsumer>()
 
-    private var renderJob: Job? = null
+    private var renderJob: Future<*>? = null
     private var consumeGifJob: Future<*>? = null
 
     private var gif: Gif = Gif(gifFrameRate)
@@ -44,53 +38,41 @@ class StreamRenderer(
         consumers -= consumer
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     fun start() {
         require(renderJob == null) { "Cannot start, job is already running" }
 
-        renderService.submit {
-            runBlocking {
-                renderJob = launch { renderStream() }
-            }
-        }
+        renderJob = renderService.scheduleWithFixedDelay(
+            { logAllExceptions { renderStream() } },
+            0,
+            150,
+            TimeUnit.MILLISECONDS
+        )
     }
 
     fun stop() {
         requireNotNull(renderJob) { "Cannot stop, no job is running" }
 
-        renderJob!!.cancel()
+        renderJob!!.cancel(false)
         renderJob = null
     }
 
-    private suspend fun renderStream() {
-        while (coroutineContext.isActive) {
-            logAllExceptions {
-                coroutineScope {
-                    val frame = renderFrame()
-                    consumers.forEach {
-                        launch(logAllExceptions) { it.acceptFrame(frame) }
-                    }
+    private fun renderStream() {
+        val frame = renderFrame()
+        consumers.map {
+            CompletableFuture.runAsync { logAllExceptions { it.acceptFrame(frame) } }
+        }.forEach { it.join() }
 
-                    gif += frame
-                    if (gif.size >= FLUSH_GIF_AT_FRAMES) {
-                        // Skip GIF if consumers are too slow
-                        if (consumeGifJob?.isDone != false) {
-                            val rawGif = gif.endSequence()
-                            consumeGifJob = gifConsumerService.submit {
-                                runBlocking {
-                                    launch { sendGifToConsumers(rawGif) }
-                                }
-                            }
-                        } else {
-                            logger.warn { "Skipping gif, consumers are still busy with previous" }
-                        }
-
-                        gif = Gif(gifFrameRate)
-                    }
-                }
-
-                delay(renderFrameRate)
+        gif += frame
+        if (gif.size >= FLUSH_GIF_AT_FRAMES) {
+            // Skip GIF if consumers are too slow
+            if (consumeGifJob?.isDone != false) {
+                val rawGif = gif.endSequence()
+                consumeGifJob = gifConsumerService.submit { sendGifToConsumers(rawGif) }
+            } else {
+                logger.warn { "Skipping gif, consumers are still busy with previous" }
             }
+
+            gif = Gif(gifFrameRate)
         }
     }
 
@@ -121,18 +103,14 @@ class StreamRenderer(
             g.dispose()
         }
 
-    private suspend fun sendGifToConsumers(rawGif: ByteArray) {
-        coroutineScope {
-            consumers.forEach {
-                launch(logAllExceptions) { it.acceptGif(rawGif) }
-            }
+    private fun sendGifToConsumers(rawGif: ByteArray) {
+        consumers.forEach {
+            CompletableFuture.runAsync { logAllExceptions { it.acceptGif(rawGif) } }
         }
     }
 }
 
 private val logger = KotlinLogging.logger {}
-
-private val renderFrameRate = 150.milliseconds
 
 // GIF plays slower to account for the loading times, that way the experience is
 // smoother and does not display the last frame for a longer time

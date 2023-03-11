@@ -1,32 +1,18 @@
 package io.github.zabuzard.discordplays
 
-import dev.kord.common.entity.DiscordPartialEmoji
-import dev.kord.core.entity.Member
-import dev.kord.rest.builder.message.EmbedBuilder
-import dev.kord.rest.builder.message.modify.UserMessageModifyBuilder
-import dev.kord.rest.builder.message.modify.embed
-import dev.kord.x.emoji.DiscordEmoji
-import dev.kord.x.emoji.toReaction
-import io.ktor.client.request.forms.ChannelProvider
-import io.ktor.utils.io.jvm.javaio.toByteReadChannel
-import kotlinx.coroutines.CoroutineExceptionHandler
-import mu.KotlinLogging
+import io.github.oshai.KotlinLogging
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.InputStream
 import java.util.concurrent.CancellationException
 import javax.imageio.ImageIO
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
 object Extensions {
-    val logAllExceptions = CoroutineExceptionHandler { _, e ->
-        if (e !is CancellationException) {
-            logger.error(e) { UNKNOWN_ERROR_MESSAGE }
-        }
-    }
-
     fun Runnable.logAllExceptions() = Runnable {
         try {
             this@logAllExceptions.run()
@@ -57,7 +43,7 @@ object Extensions {
         }
     }
 
-    suspend fun logAllExceptions(action: suspend () -> Unit) {
+    fun logAllExceptions(action: () -> Unit) {
         try {
             action()
         } catch (e: Throwable) {
@@ -85,24 +71,14 @@ object Extensions {
             .joinToString(separator = " ") { (value, label) -> "$value$label" }
     }
 
-    fun UserMessageModifyBuilder.clearEmbeds() {
-        embed { description = "" }
-        embeds?.clear()
-    }
+    fun EmbedBuilder.setAuthor(member: Member) = setAuthor(
+        member.effectiveName,
+        "https://discord.com/users/${member.idLong}/",
+        member.avatarUrl
+    )
 
-    fun EmbedBuilder.author(member: Member) {
-        author {
-            name = member.displayName
-            icon = member.avatar?.url ?: member.defaultAvatar.url
-            url = "https://discord.com/users/${member.id.value}/"
-        }
-    }
-
-    fun DiscordEmoji.toPartialEmoji() =
-        DiscordPartialEmoji(name = toReaction().name)
-
-    fun (() -> InputStream).asChannelProvider() =
-        ChannelProvider { invoke().toByteReadChannel() }
+    fun IReplyCallback.replyEphemeral(content: String) =
+        reply(content).setEphemeral(true)
 }
 
 private val logger = KotlinLogging.logger {}

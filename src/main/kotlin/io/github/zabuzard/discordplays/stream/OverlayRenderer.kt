@@ -1,6 +1,5 @@
 package io.github.zabuzard.discordplays.stream
 
-import dev.kord.core.entity.User
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.ChatMessage
@@ -10,6 +9,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
+import net.dv8tion.jda.api.entities.User
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics2D
@@ -78,7 +78,7 @@ class OverlayRenderer(
 
     private fun UserInput.render(g: Graphics2D, i: Int, oldBefore: Instant) {
         val buttonLabel = button.label()
-        val displayName = user.username.take(INPUT_NAME_MAX_LENGTH)
+        val displayName = user.name.take(INPUT_NAME_MAX_LENGTH)
 
         // Start top left
         val y = INPUT_HISTORY_OFFSET_Y + INPUT_HISTORY_ENTRY_PADDING_Y * i
@@ -93,14 +93,14 @@ class OverlayRenderer(
     }
 
     private fun renderChat(g: Graphics2D) {
-        chatHistory.filterNot { it.author.id in config.bannedUsers }.withIndex()
+        chatHistory.filterNot { it.author.idLong in config.bannedUsers }.withIndex()
             .forEach { (i, message) ->
                 message.render(g, i)
             }
     }
 
     private fun ChatMessage.render(g: Graphics2D, i: Int) {
-        val displayName = author.username.take(CHAT_NAME_MAX_LENGTH).trim() + ":"
+        val displayName = author.effectiveName.take(CHAT_NAME_MAX_LENGTH).trim() + ":"
         val displayContent = content.take(CHAT_CONTENT_MAX_LENGTH).trim()
 
         // Start top left
@@ -109,7 +109,7 @@ class OverlayRenderer(
         val y = CHAT_HISTORY_OFFSET_Y + CHAT_HISTORY_ENTRY_PADDING_Y * i
         val contentX = CHAT_NAME_OFFSET_X + g.lineData(displayName).width + CHAT_CONTENT_OFFSET_X
 
-        g.color = author.color()
+        g.color = author.user.color()
         g.drawString(displayName, CHAT_NAME_OFFSET_X, y)
         g.font = chatContentFont
         g.color = Color.WHITE
@@ -165,7 +165,7 @@ private fun Button.label() = when (this) {
     Button.RIGHT -> "►"
 }
 
-private fun User.color() = Random(id.value.toLong()).let {
+private fun User.color() = Random(idLong).let {
     // One channel is bright to ensure it stands out on black background
     val (r, g, b) = listOf(
         it.nextInt(100, 256),

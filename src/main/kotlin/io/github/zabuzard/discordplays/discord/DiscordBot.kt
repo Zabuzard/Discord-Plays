@@ -1,18 +1,12 @@
 package io.github.zabuzard.discordplays.discord
 
-import com.sksamuel.aedile.core.caffeineBuilder
-import dev.kord.common.entity.Snowflake
-import dev.kord.core.Kord
-import dev.kord.core.behavior.channel.createEmbed
-import dev.kord.core.behavior.edit
-import dev.kord.core.entity.Guild
-import dev.kord.rest.builder.message.modify.embed
-import dev.kord.rest.request.KtorRequestException
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+import io.github.oshai.KotlinLogging
+import io.github.oshai.withLoggingContext
 import io.github.zabuzard.discordplays.Config
-import io.github.zabuzard.discordplays.Extensions.asChannelProvider
-import io.github.zabuzard.discordplays.Extensions.author
-import io.github.zabuzard.discordplays.Extensions.clearEmbeds
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
+import io.github.zabuzard.discordplays.Extensions.setAuthor
 import io.github.zabuzard.discordplays.Extensions.toByteArray
 import io.github.zabuzard.discordplays.Extensions.toInputStream
 import io.github.zabuzard.discordplays.discord.commands.AutoSaver
@@ -28,20 +22,25 @@ import io.github.zabuzard.discordplays.stream.SCREEN_HEIGHT
 import io.github.zabuzard.discordplays.stream.SCREEN_WIDTH
 import io.github.zabuzard.discordplays.stream.StreamConsumer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import mu.KotlinLogging
-import mu.withLoggingContext
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.exceptions.ErrorResponseException
+import net.dv8tion.jda.api.requests.ErrorResponse
+import net.dv8tion.jda.api.requests.RestAction
+import net.dv8tion.jda.api.utils.FileUpload
 import java.awt.image.BufferedImage
 import java.io.InputStream
+import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 class DiscordBot(
-    kord: Kord,
+    jda: JDA,
     private val config: Config,
     private val emulator: Emulator,
     private val streamRenderer: StreamRenderer,
@@ -51,16 +50,17 @@ class DiscordBot(
     private val autoSaver: AutoSaver,
     private val frameRecorder: FrameRecorder
 ) : StreamConsumer, StatisticsConsumer {
+    private val hostService = Executors.newCachedThreadPool()
     private var guildToHost = emptyMap<Guild, Host>()
 
-    private val userInputCache = caffeineBuilder<Snowflake, Instant> {
-        maximumSize = 1_000
-        expireAfterWrite = 10.seconds
-    }.build()
-    private val userChatCache = caffeineBuilder<Snowflake, Instant> {
-        maximumSize = 1_000
-        expireAfterWrite = 10.seconds
-    }.build()
+    private val userInputCache: Cache<Long, Instant> = Caffeine.newBuilder()
+        .maximumSize(1_000)
+        .expireAfterWrite(10.seconds.toJavaDuration())
+        .build()
+    private val userChatCache: Cache<Long, Instant> = Caffeine.newBuilder()
+        .maximumSize(1_000)
+        .expireAfterWrite(10.seconds.toJavaDuration())
+        .build()
 
     var userInputLockedToOwners = false
         set(value) {
@@ -80,25 +80,23 @@ class DiscordBot(
         streamRenderer.addStreamConsumer(this)
         statistics.addStatisticsConsumer(this)
 
-        runBlocking {
-            loadHosts(kord)
-        }
+        loadHosts(jda)
     }
 
-    suspend fun startGame(kord: Kord) {
+    fun startGame(jda: JDA) {
         logger.info { "Starting game" }
         userInputLockedToOwners = true
-        loadHosts(kord)
+        loadHosts(jda)
 
         emulator.start()
         streamRenderer.start()
         statistics.onGameResumed()
-        autoSaver.start(this, emulator, kord)
+        autoSaver.start(this, emulator, jda)
         frameRecorder.start()
         gameCurrentlyRunning = true
     }
 
-    suspend fun stopGame() {
+    fun stopGame() {
         logger.info { "Stopping game" }
         emulator.stop()
         streamRenderer.stop()
@@ -137,9 +135,9 @@ class DiscordBot(
         GAME_OFFLINE
     }
 
-    suspend fun onUserInput(input: UserInput): UserInputResult {
-        val userId = input.user.id
-        val userName = input.user.username
+    fun onUserInput(input: UserInput): UserInputResult {
+        val userId = input.user.idLong
+        val userName = input.user.name
 
         if (!gameCurrentlyRunning) {
             logger.debug { withLoggingContext("user" to userName) { "Blocked user input ($userName), game offline" } }
@@ -186,30 +184,32 @@ class DiscordBot(
         }
     }
 
-    suspend fun onChatMessage(message: ChatMessage) {
+    fun onChatMessage(message: ChatMessage) {
         val author = message.author
-        val lastMessage = userChatCache.getIfPresent(author.id)
+        val lastMessage = userChatCache.getIfPresent(author.idLong)
 
         val now = Clock.System.now()
         val timeSinceLastMessage = if (lastMessage == null) userChatRateLimit else now - lastMessage
         if (timeSinceLastMessage < userChatRateLimit) {
             return
         }
-        userChatCache.put(author.id, now)
+        userChatCache.put(author.idLong, now)
 
         overlayRenderer.recordChatMessage(message)
 
-        forAllHosts {
-            if (it.guild.id == author.guildId) {
-                return@forAllHosts
+        forAllHostsAsync {
+            if (it.guild.idLong == author.guild.idLong) {
+                return@forAllHostsAsync
             }
 
-            val guild = author.getGuild().name
-            it.chatDescriptionMessage.getChannel().createEmbed {
-                author(author)
-                description = message.content
-                footer { text = "from $guild" }
-            }
+            val guild = author.guild.name
+            val embed = EmbedBuilder()
+                .setAuthor(author)
+                .setDescription(message.content)
+                .setFooter("from $guild")
+                .build()
+
+            it.chatDescriptionMessage.channel.sendMessageEmbeds(embed).queueHostAction(it)
         }
     }
 
@@ -237,14 +237,16 @@ class DiscordBot(
         }
     }
 
-    suspend fun sendChatMessage(message: String) {
+    fun sendChatMessage(message: String) {
         logger.info { "Sending chat message: $message" }
-        forAllHosts {
-            it.chatDescriptionMessage.channel.createMessage(message).pin()
+        forAllHostsAsync {
+            it.chatDescriptionMessage.channel.sendMessage(message)
+                .flatMap(Message::pin)
+                .queueHostAction(it)
         }
     }
 
-    suspend fun setCommunityMessage(guild: Guild, message: String?) {
+    fun setCommunityMessage(guild: Guild, message: String?) {
         if (message != null) {
             require(message.isNotEmpty()) {
                 "Cannot send an empty community message."
@@ -255,20 +257,22 @@ class DiscordBot(
         requireNotNull(host) { "Could not find any stream hosted in this server." }
 
         logger.info { "Set community message for ${host.guild.name}: $message" }
-        host.mirrorMessage.edit {
-            clearEmbeds()
-
-            if (message != null) {
-                embed { description = message }
-            }
+        val embed = if (message == null) {
+            emptyList()
+        } else {
+            listOf(
+                EmbedBuilder().setDescription(message).build()
+            )
         }
+
+        host.mirrorMessage.editMessageEmbeds(embed).queue()
     }
 
-    override suspend fun acceptFrame(frame: BufferedImage) {
+    override fun acceptFrame(frame: BufferedImage) {
         lastFrame = frame
     }
 
-    override suspend fun acceptGif(gif: ByteArray) {
+    override fun acceptGif(gif: ByteArray) {
         if (Clock.System.now() - lastUserInputAt > pauseAfterNoInputFor) {
             if (!isPaused) {
                 logger.info { "Pausing game due to inactivity" }
@@ -296,28 +300,25 @@ class DiscordBot(
         sendStreamFile("image.gif") { gif.toInputStream() }
     }
 
-    private suspend fun sendOfflineImage() =
+    private fun sendOfflineImage() =
         sendStreamFile("stream.png") { javaClass.getResourceAsStream(OFFLINE_COVER_RESOURCE)!! }
 
-    private suspend fun sendStreamFile(name: String, dataProducer: () -> InputStream) {
-        forAllHosts {
-            val data = dataProducer.asChannelProvider()
-            it.mirrorMessage.edit {
-                files?.clear()
-                addFile(name, data)
-            }
+    private fun sendStreamFile(name: String, dataProducer: () -> InputStream) {
+        forAllHostsAsync {
+            it.mirrorMessage.editMessageAttachments(
+                FileUpload.fromData(dataProducer(), name)
+            ).queueHostAction(it)
         }
     }
 
-    override suspend fun acceptStatistics(stats: String) {
-        forAllHosts {
-            it.chatDescriptionMessage.edit {
-                embeds?.clear()
-                embed {
-                    title = "Stats"
-                    description = stats
-                }
-            }
+    override fun acceptStatistics(stats: String) {
+        forAllHostsAsync { it ->
+            val embed = EmbedBuilder()
+                .setTitle("Stats")
+                .setDescription(stats)
+                .build()
+
+            it.chatDescriptionMessage.editMessageEmbeds(embed).queueHostAction(it)
         }
     }
 
@@ -325,26 +326,26 @@ class DiscordBot(
         config.edit { hosts = guildToHost.values.map(Host::toHostId).toSet() }
     }
 
-    private suspend fun loadHosts(kord: Kord) {
-        guildToHost = config.hosts.mapNotNull { it.toHost(kord) }.associateBy { it.guild }
+    private fun loadHosts(jda: JDA) {
+        guildToHost = config.hosts.mapNotNull { it.toHost(jda) }.associateBy { it.guild }
         saveHosts()
     }
 
-    private suspend fun forAllHosts(consumer: suspend (Host) -> Unit) {
-        coroutineScope {
-            guildToHost.values.forEach {
-                launch(logAllExceptions) {
-                    try {
-                        consumer(it)
-                    } catch (e: KtorRequestException) {
-                        if (e.error?.code?.name == MESSAGE_NOT_FOUND_ERROR) {
-                            removeHost(it.guild)
-                        } else {
-                            throw e
-                        }
-                    }
+    private fun forAllHostsAsync(consumer: (Host) -> Unit) {
+        guildToHost.values.forEach {
+            hostService.submit {
+                logAllExceptions {
+                    consumer(it)
                 }
             }
+        }
+    }
+
+    private fun <T> RestAction<T>.queueHostAction(host: Host) = queue({}) {
+        if (it is ErrorResponseException && it.errorResponse == ErrorResponse.UNKNOWN_MESSAGE) {
+            removeHost(host.guild)
+        } else {
+            throw it
         }
     }
 
@@ -356,8 +357,8 @@ class DiscordBot(
 
 private val logger = KotlinLogging.logger {}
 
-private val userInputRateLimit = 1.5.seconds
-private val userChatRateLimit = 1.5.seconds
+private val userInputRateLimit = 0.5.seconds
+private val userChatRateLimit = 1.seconds
 private const val MESSAGE_NOT_FOUND_ERROR = "UnknownMessage"
 
 private val pauseAfterNoInputFor = 2.minutes

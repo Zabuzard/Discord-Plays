@@ -1,32 +1,25 @@
 package io.github.zabuzard.discordplays.discord.stats
 
-import dev.kord.common.entity.Snowflake
+import io.github.oshai.KotlinLogging
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.Extensions.formatted
 import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.discord.UserInput
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import mu.KotlinLogging
 import java.util.*
-import kotlin.coroutines.coroutineContext
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
 
-@OptIn(DelicateCoroutinesApi::class)
 class Statistics(private val config: Config) {
+    private val service = Executors.newSingleThreadScheduledExecutor()
     private var consumers = emptyList<StatisticsConsumer>()
 
     private var gameActiveLastHeartbeat: Instant? = null
-    private val userToInputCount: MutableMap<Snowflake, Long>
-    private val userToName: MutableMap<Snowflake, String>
+    private val userToInputCount: MutableMap<Long, Long>
+    private val userToName: MutableMap<Long, String>
     private var totalInputCount: Long
 
     init {
@@ -35,7 +28,12 @@ class Statistics(private val config: Config) {
             config.userToInputCount.associate { (user, _) -> user.id to user.name }.toMutableMap()
         totalInputCount = config.userToInputCount.sumOf { it.second }
 
-        GlobalScope.launch(Dispatchers.IO) { computeStatsRoutine() }
+        service.scheduleAtFixedRate(
+            { logAllExceptions { computeStats() } },
+            0,
+            1,
+            TimeUnit.MINUTES
+        )
     }
 
     fun addStatisticsConsumer(consumer: StatisticsConsumer) {
@@ -66,9 +64,9 @@ class Statistics(private val config: Config) {
     }
 
     fun onUserInput(userInput: UserInput) {
-        userInput.user.id.let {
+        userInput.user.idLong.let {
             userToInputCount[it] = (userToInputCount[it] ?: 0) + 1
-            userToName[it] = userInput.user.username
+            userToName[it] = userInput.user.name
         }
 
         totalInputCount++
@@ -84,17 +82,7 @@ class Statistics(private val config: Config) {
         }
     }
 
-    private suspend fun computeStatsRoutine() {
-        while (coroutineContext.isActive) {
-            logAllExceptions {
-                computeStats()
-
-                delay(1.minutes)
-            }
-        }
-    }
-
-    private suspend fun computeStats() {
+    private fun computeStats() {
         val uniqueUserCount = userToInputCount.size
 
         val userIdToInputSorted =
@@ -131,10 +119,8 @@ class Statistics(private val config: Config) {
         """.trimMargin()
 
         logger.debug { "Sending statistics update" }
-        coroutineScope {
-            consumers.forEach {
-                launch(logAllExceptions) { it.acceptStatistics(stats) }
-            }
+        consumers.forEach {
+            CompletableFuture.runAsync { logAllExceptions { it.acceptStatistics(stats) } }
         }
     }
 }

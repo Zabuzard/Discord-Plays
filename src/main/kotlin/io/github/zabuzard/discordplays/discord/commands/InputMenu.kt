@@ -1,94 +1,84 @@
 package io.github.zabuzard.discordplays.discord.commands
 
-import dev.kord.common.entity.ButtonStyle
-import dev.kord.core.Kord
-import dev.kord.core.behavior.channel.createMessage
-import dev.kord.core.behavior.interaction.respondEphemeral
-import dev.kord.core.entity.interaction.GuildChatInputCommandInteraction
-import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
-import dev.kord.core.on
-import dev.kord.rest.builder.component.ActionRowBuilder
-import dev.kord.rest.builder.message.create.actionRow
-import dev.kord.x.emoji.Emojis
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
-import io.github.zabuzard.discordplays.Extensions.toPartialEmoji
+import io.github.zabuzard.discordplays.Extensions.replyEphemeral
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.UserInput
 import kotlinx.datetime.Clock
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.entities.emoji.Emoji
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
+import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.interactions.components.ActionRow
+import net.dv8tion.jda.api.interactions.components.buttons.Button.secondary
 import java.util.*
 
 object InputMenu {
-    suspend fun GuildChatInputCommandInteraction.createInputMenu() =
-        channel.createMessage {
-            actionRow {
-                controlButton(Button.A)
-                controlButton(Button.UP)
-                controlButton(Button.B)
-            }
-            actionRow {
-                controlButton(Button.LEFT)
-                fakeButton()
-                controlButton(Button.RIGHT)
-            }
-            actionRow {
-                controlButton(Button.START)
-                controlButton(Button.DOWN)
-                controlButton(Button.SELECT)
-            }
-        }
+    fun SlashCommandInteractionEvent.createInputMenu() = channel.sendMessageComponents(
+        ActionRow.of(
+            controlButton(Button.A),
+            controlButton(Button.UP),
+            controlButton(Button.B)
+        ),
+        ActionRow.of(
+            controlButton(Button.LEFT),
+            fakeButton(),
+            controlButton(Button.RIGHT)
+        ),
+        ActionRow.of(
+            controlButton(Button.START),
+            controlButton(Button.DOWN),
+            controlButton(Button.SELECT)
+        )
+    )
 
-    private fun ActionRowBuilder.controlButton(button: Button) {
-        val id = "$CONTROL_BUTTON_ID_PREFIX-${button.name}-${UUID.randomUUID()}"
-        interactionButton(ButtonStyle.Secondary, id) {
-            emoji = button.toEmoji().toPartialEmoji()
-        }
-    }
+    private fun controlButton(button: Button) = secondary(
+        "$CONTROL_BUTTON_ID_PREFIX-${button.name}-${UUID.randomUUID()}",
+        button.toEmoji()
+    )
 
-    private fun ActionRowBuilder.fakeButton() =
-        interactionButton(ButtonStyle.Secondary, "fake") {
-            label = INVISIBLE_WHITESPACE
-            disabled = true
-        }
+    private fun fakeButton() = secondary("fake", INVISIBLE_WHITESPACE).asDisabled()
 }
 
-fun Kord.onControlButtonClicked(bot: DiscordBot) {
-    on<ButtonInteractionCreateEvent> {
-        with(interaction) {
-            val buttonId = component.data.customId.value ?: ""
+fun JDA.onControlButtonClicked(bot: DiscordBot) {
+    addEventListener(object : ListenerAdapter() {
+        override fun onButtonInteraction(event: ButtonInteractionEvent) {
+            val buttonId = event.button.id ?: ""
             if (!buttonId.startsWith(CONTROL_BUTTON_ID_PREFIX)) {
-                return@on
+                return
             }
 
             val buttonName = buttonId.split("-", limit = 3)[1]
             val button = Button.valueOf(buttonName)
 
-            val userInput = UserInput(user, button, Clock.System.now())
+            val userInput = UserInput(event.user, button, Clock.System.now())
 
-            when (bot.onUserInput(userInput)) {
-                DiscordBot.UserInputResult.ACCEPTED -> deferEphemeralMessageUpdate()
-                DiscordBot.UserInputResult.RATE_LIMITED -> respondEphemeral {
-                    content = "You click too fast, please wait a bit."
-                }
+            with(event) {
+                when (bot.onUserInput(userInput)) {
+                    DiscordBot.UserInputResult.ACCEPTED -> deferEdit()
+                    DiscordBot.UserInputResult.RATE_LIMITED -> replyEphemeral(
+                        "You click too fast, please wait a bit."
+                    )
 
-                DiscordBot.UserInputResult.BLOCKED_NON_OWNER -> respondEphemeral {
-                    content =
+                    DiscordBot.UserInputResult.BLOCKED_NON_OWNER -> replyEphemeral(
                         "User input is currently locked. The game is controlled only by the owners."
-                }
+                    )
 
-                DiscordBot.UserInputResult.USER_BANNED -> respondEphemeral {
-                    content = """
-                        Sorry, you have been banned from the event. The game is not accepting your input anymore.
-                        Please get in contact with an owner or host of the event.
-                    """.trimIndent()
-                }
+                    DiscordBot.UserInputResult.USER_BANNED -> replyEphemeral(
+                        """
+                        |Sorry, you have been banned from the event. The game is not accepting your input anymore.
+                        |Please get in contact with an owner or host of the event.
+                        """.trimMargin()
+                    )
 
-                DiscordBot.UserInputResult.GAME_OFFLINE -> respondEphemeral {
-                    content =
+                    DiscordBot.UserInputResult.GAME_OFFLINE -> replyEphemeral(
                         "The game is currently offline. Please wait until it is back."
-                }
+                    )
+                }.queue()
             }
         }
-    }
+    })
 }
 
 private const val INVISIBLE_WHITESPACE = "‎"
@@ -96,12 +86,12 @@ private const val CONTROL_BUTTON_ID_PREFIX = "discord_plays_input"
 
 private fun Button.toEmoji() =
     when (this) {
-        Button.A -> Emojis.a
-        Button.B -> Emojis.b
-        Button.UP -> Emojis.arrowUp
-        Button.LEFT -> Emojis.arrowLeft
-        Button.RIGHT -> Emojis.arrowRight
-        Button.DOWN -> Emojis.arrowDown
-        Button.START -> Emojis.heavyPlusSign
-        Button.SELECT -> Emojis.heavyMinusSign
+        Button.A -> Emoji.fromUnicode("🅰")
+        Button.B -> Emoji.fromUnicode("🅱")
+        Button.UP -> Emoji.fromUnicode("⬆")
+        Button.LEFT -> Emoji.fromUnicode("⬅")
+        Button.RIGHT -> Emoji.fromUnicode("➡")
+        Button.DOWN -> Emoji.fromUnicode("⬇")
+        Button.START -> Emoji.fromUnicode("➕")
+        Button.SELECT -> Emoji.fromUnicode("➖")
     }

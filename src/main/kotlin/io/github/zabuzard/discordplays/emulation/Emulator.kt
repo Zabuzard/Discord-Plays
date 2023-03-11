@@ -44,7 +44,7 @@ class Emulator(
         gameboy = null
     }
 
-    suspend fun clickButton(button: ButtonListener.Button) =
+    fun clickButton(button: ButtonListener.Button) =
         controller.clickButton(button)
 
     fun pressButton(button: ButtonListener.Button) = controller.pressButton(button)

@@ -1,25 +1,24 @@
 package io.github.zabuzard.discordplays.discord
 
-import dev.kord.common.entity.Snowflake
-import dev.kord.core.Kord
-import dev.kord.core.entity.Guild
-import dev.kord.core.entity.Message
 import kotlinx.serialization.Serializable
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.Message
 
 data class Host(val guild: Guild, val mirrorMessage: Message, val chatDescriptionMessage: Message) {
-    fun toHostId() = HostId(guild.id, mirrorMessage.toId(), chatDescriptionMessage.toId())
+    fun toHostId() = HostId(guild.idLong, mirrorMessage.toId(), chatDescriptionMessage.toId())
 }
 
 @Serializable
 data class HostId(
-    val guildId: Snowflake,
+    val guildId: Long,
     val mirrorMessageId: MessageId,
     val chatDescriptionMessageId: MessageId
 ) {
-    suspend fun toHost(kord: Kord): Host? {
-        val guild = kord.getGuildOrNull(guildId)
-        val mirrorMessage = mirrorMessageId.toMessage(kord)
-        val chatDescriptionMessage = chatDescriptionMessageId.toMessage(kord)
+    fun toHost(jda: JDA): Host? {
+        val guild = jda.getGuildById(guildId)
+        val mirrorMessage = mirrorMessageId.toMessage(jda)
+        val chatDescriptionMessage = chatDescriptionMessageId.toMessage(jda)
 
         if (guild == null || mirrorMessage == null || chatDescriptionMessage == null) {
             return null

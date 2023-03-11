@@ -1,27 +1,28 @@
 package io.github.zabuzard.discordplays.discord.commands
 
-import dev.kord.core.Kord
-import dev.kord.core.event.message.MessageCreateEvent
-import dev.kord.core.on
 import io.github.zabuzard.discordplays.Config
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.toChatMessage
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import net.dv8tion.jda.api.hooks.ListenerAdapter
 
-fun Kord.onChatMessage(
+fun JDA.onChatMessage(
     config: Config,
     bot: DiscordBot
 ) {
-    on<MessageCreateEvent> {
-        if (message.author?.isBot == true ||
-            message.webhookId != null ||
-            message.author?.id in config.bannedUsers
-        ) {
-            return@on
+    addEventListener(object : ListenerAdapter() {
+        override fun onMessageReceived(event: MessageReceivedEvent) {
+            if (event.author.isBot ||
+                event.isWebhookMessage ||
+                event.author.idLong in config.bannedUsers
+            ) {
+                return
+            }
+
+            if (config.hosts.none { it.chatDescriptionMessageId.channelId == event.channel.idLong }) return
+
+            bot.onChatMessage(event.message.toChatMessage())
         }
-
-        val host = config.hosts.find { it.chatDescriptionMessageId.channelId == message.channelId }
-            ?: return@on
-
-        bot.onChatMessage(message.toChatMessage(host.guildId))
-    }
+    })
 }

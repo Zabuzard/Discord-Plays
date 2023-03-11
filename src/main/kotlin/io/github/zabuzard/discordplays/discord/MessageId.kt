@@ -1,17 +1,17 @@
 package io.github.zabuzard.discordplays.discord
 
-import dev.kord.common.entity.Snowflake
-import dev.kord.core.Kord
-import dev.kord.core.entity.Message
-import dev.kord.core.entity.channel.MessageChannel
-import dev.kord.core.supplier.EntitySupplyStrategy
 import kotlinx.serialization.Serializable
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 
 @Serializable
-data class MessageId(val channelId: Snowflake, val messageId: Snowflake) {
-    suspend fun toMessage(kord: Kord) =
-        kord.getChannelOf<MessageChannel>(channelId, strategy = EntitySupplyStrategy.rest)
-            ?.getMessageOrNull(messageId)
+data class MessageId(val channelId: Long, val messageId: Long) {
+    fun toMessage(jda: JDA) =
+        jda.getChannelById(MessageChannel::class.java, channelId)
+            ?.retrieveMessageById(messageId)
+            ?.onErrorMap { null }
+            ?.complete()
 }
 
-fun Message.toId() = MessageId(channelId, id)
+fun Message.toId() = MessageId(channel.idLong, idLong)

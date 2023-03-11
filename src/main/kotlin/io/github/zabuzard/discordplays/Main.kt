@@ -1,8 +1,6 @@
 package io.github.zabuzard.discordplays
 
-import dev.kord.core.Kord
-import dev.kord.gateway.Intent
-import dev.kord.gateway.PrivilegedIntent
+import io.github.oshai.KotlinLogging
 import io.github.zabuzard.discordplays.discord.DiscordBot
 import io.github.zabuzard.discordplays.discord.commands.AutoSaver
 import io.github.zabuzard.discordplays.discord.commands.onAutoSaveConversation
@@ -17,9 +15,10 @@ import io.github.zabuzard.discordplays.local.FrameRecorder
 import io.github.zabuzard.discordplays.local.LocalDisplay
 import io.github.zabuzard.discordplays.stream.OverlayRenderer
 import io.github.zabuzard.discordplays.stream.StreamRenderer
-import mu.KotlinLogging
+import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.requests.GatewayIntent
 
-suspend fun main(args: Array<String>) {
+fun main(args: Array<String>) {
     require(args.size == 1) {
         "Incorrect number of arguments. The first argument must be the bot token. " +
             "Supplied arguments: ${args.contentToString()}"
@@ -27,7 +26,10 @@ suspend fun main(args: Array<String>) {
 
     val token = args.first()
 
-    val kord = Kord(token)
+    val jda = JDABuilder.createDefault(token)
+        .enableIntents(GatewayIntent.MESSAGE_CONTENT)
+        .build()
+    jda.awaitReady()
 
     // Create services
     val config = Config.loadOrDefault()
@@ -43,7 +45,7 @@ suspend fun main(args: Array<String>) {
     val statistics = Statistics(config)
     val autoSaver = AutoSaver(config, streamRenderer)
     val bot = DiscordBot(
-        kord,
+        jda,
         config,
         emulator,
         streamRenderer,
@@ -54,20 +56,15 @@ suspend fun main(args: Array<String>) {
         frameRecorder
     )
 
-    kord.registerCommands()
+    jda.registerCommands()
 
-    kord.onOwnerCommands(config, bot, emulator, autoSaver, statistics)
-    kord.onHostCommands(config, bot)
-    kord.onControlButtonClicked(bot)
-    kord.onChatMessage(config, bot)
-    kord.onAutoSaveConversation(bot, emulator, autoSaver)
+    jda.onOwnerCommands(config, bot, autoSaver, statistics)
+    jda.onHostCommands(config, bot)
+    jda.onControlButtonClicked(bot)
+    jda.onChatMessage(config, bot)
+    jda.onAutoSaveConversation(bot, emulator, autoSaver)
 
-    kord.login {
-        @OptIn(PrivilegedIntent::class)
-        intents += Intent.MessageContent
-
-        logger.info { "Bot started, ready" }
-    }
+    logger.info { "Bot started, ready" }
 }
 
 private val logger = KotlinLogging.logger {}

@@ -20,10 +20,11 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.20.0")
     implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.20.0")
 
-    implementation("dev.kord:kord-core:0.8.0-M17")
-    implementation("dev.kord.x:emoji:0.5.0")
+    implementation("net.dv8tion:JDA:5.0.0-beta.5")
     implementation("com.github.Zabuzard:coffee-gb:discord_plays_pokemon-SNAPSHOT")
-    implementation("com.sksamuel.aedile:aedile-core:1.2.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.5")
 
     testImplementation(kotlin("test"))
 }

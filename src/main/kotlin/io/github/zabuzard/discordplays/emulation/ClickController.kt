@@ -3,24 +3,27 @@ package io.github.zabuzard.discordplays.emulation
 import eu.rekawek.coffeegb.controller.ButtonListener
 import eu.rekawek.coffeegb.controller.ButtonListener.Button
 import eu.rekawek.coffeegb.controller.Controller
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
 internal class ClickController : Controller {
     private lateinit var buttonListener: ButtonListener
+    private val service = Executors.newSingleThreadScheduledExecutor()
 
     override fun setButtonListener(listener: ButtonListener) {
         buttonListener = listener
     }
 
-    suspend fun clickButton(button: Button) {
+    fun clickButton(button: Button): ScheduledFuture<*> {
         buttonListener.onButtonPress(button)
-        delay(clickDuration)
-        buttonListener.onButtonRelease(button)
+        return service.schedule(
+            { buttonListener.onButtonRelease(button) },
+            250,
+            TimeUnit.MILLISECONDS
+        )
     }
 
     fun pressButton(button: Button) = buttonListener.onButtonPress(button)
     fun releaseButton(button: Button) = buttonListener.onButtonRelease(button)
 }
-
-private val clickDuration = 250.milliseconds

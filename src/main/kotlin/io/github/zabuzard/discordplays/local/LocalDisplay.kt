@@ -74,11 +74,11 @@ class LocalDisplay(
         emulator.muteSound()
     }
 
-    override suspend fun acceptFrame(frame: BufferedImage) {
+    override fun acceptFrame(frame: BufferedImage) {
         label?.icon = ImageIcon(frame)
     }
 
-    override suspend fun acceptGif(gif: ByteArray) {
+    override fun acceptGif(gif: ByteArray) {
         // Only interested in frames
     }
 }
