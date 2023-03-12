@@ -35,7 +35,7 @@ internal class GraphicsDisplay() : Display {
     }
 
     override fun requestRefresh() {
-        renderTask = renderService.submit(this::refresh.logAllExceptions())
+        renderTask = renderService.submit { logAllExceptions { refresh() } }
     }
 
     override fun waitForRefresh() {

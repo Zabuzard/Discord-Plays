@@ -13,42 +13,12 @@ import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
 object Extensions {
-    fun Runnable.logAllExceptions() = Runnable {
-        try {
-            this@logAllExceptions.run()
-        } catch (e: Throwable) {
-            if (e !is CancellationException) {
-                logger.error(e) { UNKNOWN_ERROR_MESSAGE }
-            }
-        }
-    }
-
-    fun (() -> Unit).logAllExceptions() = Runnable {
-        try {
-            invoke()
-        } catch (e: Throwable) {
-            if (e !is CancellationException) {
-                logger.error(e) { UNKNOWN_ERROR_MESSAGE }
-            }
-        }
-    }
-
-    fun <T> ((T) -> Unit).logAllExceptions(): ((T) -> Unit) = {
-        try {
-            this.invoke(it)
-        } catch (e: Throwable) {
-            if (e !is CancellationException) {
-                logger.error(e) { UNKNOWN_ERROR_MESSAGE }
-            }
-        }
-    }
-
     fun logAllExceptions(action: () -> Unit) {
         try {
             action()
         } catch (e: Throwable) {
             if (e !is CancellationException) {
-                logger.error(e) { UNKNOWN_ERROR_MESSAGE }
+                logger.error(e) { "Unknown error" }
             }
         }
     }
@@ -82,5 +52,3 @@ object Extensions {
 }
 
 private val logger = KotlinLogging.logger {}
-
-private const val UNKNOWN_ERROR_MESSAGE = "Unknown error"

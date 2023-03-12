@@ -263,9 +263,9 @@ private fun SlashCommandInteractionEvent.onCreateVideo(
             ProcessBuilder(
                 "ffmpeg",
                 "-framerate",
-                "10",
+                "20",
                 "-r",
-                "10",
+                "20",
                 "-i",
                 "%d${FrameRecorder.FRAME_SUFFIX}",
                 "-pix_fmt",

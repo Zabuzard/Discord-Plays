@@ -33,7 +33,7 @@ class Emulator(
         muteSound()
 
         gameboy = Gameboy(options, cartridge, display, controller, soundOutput, serialEndpoint)
-            .also { emulationService.submit(it.logAllExceptions()) }
+            .also { emulationService.submit { logAllExceptions { it.run() } } }
     }
 
     @Synchronized

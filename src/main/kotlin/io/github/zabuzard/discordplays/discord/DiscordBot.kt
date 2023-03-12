@@ -5,7 +5,6 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.KotlinLogging
 import io.github.oshai.withLoggingContext
 import io.github.zabuzard.discordplays.Config
-import io.github.zabuzard.discordplays.Extensions.logAllExceptions
 import io.github.zabuzard.discordplays.Extensions.setAuthor
 import io.github.zabuzard.discordplays.Extensions.toByteArray
 import io.github.zabuzard.discordplays.Extensions.toInputStream
@@ -32,8 +31,11 @@ import net.dv8tion.jda.api.exceptions.ErrorResponseException
 import net.dv8tion.jda.api.requests.ErrorResponse
 import net.dv8tion.jda.api.requests.RestAction
 import net.dv8tion.jda.api.utils.FileUpload
+import net.dv8tion.jda.internal.requests.CompletedRestAction
 import java.awt.image.BufferedImage
 import java.io.InputStream
+import java.util.*
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -50,8 +52,10 @@ class DiscordBot(
     private val autoSaver: AutoSaver,
     private val frameRecorder: FrameRecorder
 ) : StreamConsumer, StatisticsConsumer {
-    private val hostService = Executors.newCachedThreadPool()
+    private val hostService = Executors.newFixedThreadPool(10)
     private var guildToHost = emptyMap<Guild, Host>()
+    private val hostToFailureRetry =
+        Collections.synchronizedMap(mutableMapOf<Host, HostFailureRetry>())
 
     private val userInputCache: Cache<Long, Instant> = Caffeine.newBuilder()
         .maximumSize(1_000)
@@ -197,9 +201,9 @@ class DiscordBot(
 
         overlayRenderer.recordChatMessage(message)
 
-        forAllHostsAsync {
+        forAllHosts {
             if (it.guild.idLong == author.guild.idLong) {
-                return@forAllHostsAsync
+                return@forAllHosts CompletedRestAction<Void>(it.guild.jda, null)
             }
 
             val guild = author.guild.name
@@ -209,7 +213,7 @@ class DiscordBot(
                 .setFooter("from $guild")
                 .build()
 
-            it.chatDescriptionMessage.channel.sendMessageEmbeds(embed).queueHostAction(it)
+            it.chatDescriptionMessage.channel.sendMessageEmbeds(embed)
         }
     }
 
@@ -239,10 +243,9 @@ class DiscordBot(
 
     fun sendChatMessage(message: String) {
         logger.info { "Sending chat message: $message" }
-        forAllHostsAsync {
+        forAllHosts {
             it.chatDescriptionMessage.channel.sendMessage(message)
                 .flatMap(Message::pin)
-                .queueHostAction(it)
         }
     }
 
@@ -304,21 +307,21 @@ class DiscordBot(
         sendStreamFile("stream.png") { javaClass.getResourceAsStream(OFFLINE_COVER_RESOURCE)!! }
 
     private fun sendStreamFile(name: String, dataProducer: () -> InputStream) {
-        forAllHostsAsync {
+        forAllHosts {
             it.mirrorMessage.editMessageAttachments(
                 FileUpload.fromData(dataProducer(), name)
-            ).queueHostAction(it)
+            )
         }
     }
 
     override fun acceptStatistics(stats: String) {
-        forAllHostsAsync { it ->
+        forAllHosts { it ->
             val embed = EmbedBuilder()
                 .setTitle("Stats")
                 .setDescription(stats)
                 .build()
 
-            it.chatDescriptionMessage.editMessageEmbeds(embed).queueHostAction(it)
+            it.chatDescriptionMessage.editMessageEmbeds(embed)
         }
     }
 
@@ -331,22 +334,38 @@ class DiscordBot(
         saveHosts()
     }
 
-    private fun forAllHostsAsync(consumer: (Host) -> Unit) {
-        guildToHost.values.forEach {
+    private fun forAllHosts(hostAction: (Host) -> RestAction<*>) {
+        guildToHost.values.map {
+            val failureRetry = hostToFailureRetry[it]
+            if (failureRetry != null && failureRetry.retryWhen > Clock.System.now()) {
+                return@map CompletableFuture.completedFuture(null)
+            }
+
             hostService.submit {
-                logAllExceptions {
-                    consumer(it)
+                try {
+                    hostAction(it).complete()
+
+                    if (failureRetry != null) {
+                        logger.info("Host (${it.guild.name}) succeeded after previously ${failureRetry.currentAttempt} failed attempts")
+                        hostToFailureRetry -= it
+                    }
+                } catch (e: Exception) {
+                    if (e is ErrorResponseException && e.errorResponse == ErrorResponse.UNKNOWN_MESSAGE) {
+                        removeHost(it.guild)
+                    } else {
+                        val nextFailureRetry = failureRetry?.nextRetry() ?: HostFailureRetry()
+                        hostToFailureRetry[it] = nextFailureRetry
+
+                        val delay = getDelayForAttempt(nextFailureRetry.currentAttempt)
+                        logger.error(
+                            "Unknown error with host ${it.guild.name}, next attempt delayed for $delay",
+                            it,
+                            e
+                        )
+                    }
                 }
             }
-        }
-    }
-
-    private fun <T> RestAction<T>.queueHostAction(host: Host) = queue({}) {
-        if (it is ErrorResponseException && it.errorResponse == ErrorResponse.UNKNOWN_MESSAGE) {
-            removeHost(host.guild)
-        } else {
-            throw it
-        }
+        }.forEach { it.get() }
     }
 
     companion object {
@@ -363,3 +382,20 @@ private const val MESSAGE_NOT_FOUND_ERROR = "UnknownMessage"
 
 private val pauseAfterNoInputFor = 2.minutes
 private const val PAUSED_MESSAGE = "Game is paused, press any key to continue"
+
+private data class HostFailureRetry(
+    val currentAttempt: Int = 0,
+    val retryWhen: Instant = Clock.System.now() + getDelayForAttempt(0)
+) {
+    fun nextRetry(): HostFailureRetry = (currentAttempt + 1).let {
+        HostFailureRetry(it, Clock.System.now() + getDelayForAttempt(it))
+    }
+}
+
+private fun getDelayForAttempt(attempt: Int) = when (attempt) {
+    0 -> 2.seconds
+    1 -> 10.seconds
+    2 -> 30.seconds
+    3 -> 1.minutes
+    else -> 5.minutes
+}

@@ -104,9 +104,9 @@ class StreamRenderer(
         }
 
     private fun sendGifToConsumers(rawGif: ByteArray) {
-        consumers.forEach {
+        consumers.map {
             CompletableFuture.runAsync { logAllExceptions { it.acceptGif(rawGif) } }
-        }
+        }.forEach(CompletableFuture<Void>::join)
     }
 }
 
