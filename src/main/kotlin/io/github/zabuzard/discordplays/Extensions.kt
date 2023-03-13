@@ -44,7 +44,7 @@ object Extensions {
     fun EmbedBuilder.setAuthor(member: Member) = setAuthor(
         member.effectiveName,
         "https://discord.com/users/${member.idLong}/",
-        member.avatarUrl
+        member.effectiveAvatarUrl
     )
 
     fun IReplyCallback.replyEphemeral(content: String) =
