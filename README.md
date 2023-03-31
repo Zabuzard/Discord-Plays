@@ -11,6 +11,8 @@ Inspired by Twitch Plays Pokémon. Feel free to contribute or tell us how you li
 
 ![demo](https://i.imgur.com/SGTyCZC.gif)
 
+There is a full playthrough of Pokémon Red at https://www.youtube.com/playlist?list=PLuIsDtqkJ0MpAyQ7CmfLjW6awaifDMtuX.
+
 ## Features
 
 * supports any Gameboy or Gameboy Color ROM
